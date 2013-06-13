@@ -1,5 +1,5 @@
 
-Vizkit::UiLoader::extend_cplusplus_widget_class "ControlBot" do
+Vizkit::UiLoader::extend_cplusplus_widget_class "ControlUi" do
 
     #called when the widget is created
     def initialize_vizkit_extension
@@ -24,4 +24,4 @@ end
 # register widget for a specific Typelib type to be 
 # accessible via rock tooling (rock-replay,...)
 # multiple register_widget_for are allowed for each widget
-# Vizkit::UiLoader.register_widget_for("ControlBot","/base/Angle",:update)
+# Vizkit::UiLoader.register_widget_for("ControlUi","/base/Angle",:update)

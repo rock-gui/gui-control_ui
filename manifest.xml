@@ -15,4 +15,5 @@
   -->
   <depend package="base/types" />
   <depend package="control/urdf" />
+  <depend package="gui/vizkit" />
 </package>

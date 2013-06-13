@@ -5,12 +5,12 @@ include_directories(${QT_QTGUI_INCLUDE_DIR})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 SET(MOC_HDRS
-    ControlBot.h
-    ControlBotPlugin.h
+    ControlUi.h
+    ControlUiPlugin.h
 )
 
 SET(HDRS
-    ControlBot.h
+    ControlUi.h
 )
 
 FILE(GLOB SRCS
@@ -20,7 +20,7 @@ FILE(GLOB SRCS
 SET(QtApp_RCCS resources.qrc)
 QT4_ADD_RESOURCES(QtApp_RCC_SRCS ${QtApp_RCCS})
 
-rock_vizkit_widget(ControlBot
+rock_vizkit_widget(control_ui
     SOURCES ${SRCS} ${QtApp_RCC_SRCS} 
     HEADERS ${HDRS}
     MOC ${MOC_HDRS}
