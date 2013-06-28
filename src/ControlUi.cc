@@ -54,7 +54,7 @@ void ControlUi::initModel(QString filepath)
 {
     //Read the urdf file
     urdf::Model urdf_model;
-    urdf_model.initFile(filepath.toLatin1().data());
+    urdf_model.initFile(filepath.toStdString());
 
     //Set up user interface
     std::map<std::string, boost::shared_ptr<urdf::Joint> >::iterator it;
