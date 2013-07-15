@@ -34,7 +34,7 @@ void ControlUi::handleNewVal(double val)
 
     val = val * 0.0174532925; //Degrees to radian;
 
-    currentJoints_.states[idx].position = val;
+    currentJoints_[idx].position = val;
     currentJoints_.time = base::Time::now();
 
 
@@ -42,7 +42,7 @@ void ControlUi::handleNewVal(double val)
     base::commands::Joints val_joint_command;
     val_joint_command.resize(1);
     val_joint_command.names[0] = name.toLatin1().data();
-    val_joint_command.states[0].position = val;
+    val_joint_command[0].position = val;
 
     //Tell everyone that there's something new
     emit(newVal(name, rad(val)));
@@ -92,8 +92,8 @@ void ControlUi::initModel(QString filepath)
 
             //Fill current joint configuration
             currentJoints_.names.push_back(name);
-            currentJoints_.states.push_back(base::JointState());
-            currentJoints_.states.back().position = val->value() * 0.0174532925; //Degrees to radian
+            currentJoints_.elements.push_back(base::JointState());
+            currentJoints_.elements.back().position = val->value() * 0.0174532925; //Degrees to radian
 
             i++;
         }
