@@ -45,7 +45,7 @@ void ControlUi::handleNewVal(double val)
     val_joint_command[0].position = val;
 
     //Tell everyone that there's something new
-    emit(newVal(name, rad(val)));
+    emit(newVal(name, val));
     emit(newVal(val_joint_command));
 }
 
