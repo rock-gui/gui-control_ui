@@ -1,5 +1,7 @@
+#include <urdf_parser/urdf_parser.h>
 #include "ControlUi.h"
 #include <base/Logging.hpp>
+#include <fstream>
 
 ControlUi::ControlUi(QWidget *parent)
     : QWidget(parent)
@@ -53,15 +55,16 @@ void ControlUi::handleNewVal(double val)
 void ControlUi::initModel(QString filepath)
 {
     //Read the urdf file
-    urdf::Model urdf_model;
-    urdf_model.initFile(filepath.toStdString());
+    std::ifstream file(filepath.toStdString().c_str());
+    std::string xml((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    boost::shared_ptr<urdf::ModelInterface> urdf_model = urdf::parseURDF(xml);
 
     //Set up user interface
     std::map<std::string, boost::shared_ptr<urdf::Joint> >::iterator it;
     QGridLayout *layout = new QGridLayout;
     int i=0;
     const int columns=5;
-    for (it=urdf_model.joints_.begin(); it!=urdf_model.joints_.end(); ++it){
+    for (it=urdf_model->joints_.begin(); it!=urdf_model->joints_.end(); ++it){
         boost::shared_ptr<urdf::Joint> joint = it->second;
         std::string name = it->first;
         if(joint->type != urdf::Joint::FIXED){

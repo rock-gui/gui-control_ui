@@ -7,6 +7,6 @@
   <url>http://</url>
   <logo>http://</logo>
   <depend package="base/types" />
-  <depend package="control/urdf" />
+  <depend package="control/urdfdom" />
   <depend package="gui/vizkit" />
 </package>

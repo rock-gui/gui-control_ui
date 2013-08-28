@@ -2,7 +2,6 @@
 #define CONTROLBOT_H
 
 #include <QtGui>
-#include <urdf/model.h>
 #include <base/commands/Joints.hpp>
 
 inline double deg(double rad){return rad*57.2957795;}
