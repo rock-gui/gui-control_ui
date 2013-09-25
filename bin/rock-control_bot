@@ -1,0 +1,63 @@
+#! /usr/bin/env ruby
+
+require 'vizkit'
+require 'optparse'
+
+use_test_gui = true
+hostname = nil
+options = OptionParser.new do |opt|
+    opt.banner = <<-EOD
+rock-control_bot [options] /path/to/model/file [task context to write joint commands to]
+    EOD
+    opt.on '--host=HOSTNAME', String, 'the host we should contact to find RTT tasks' do |host|
+        hostname = host
+    end
+    opt.on '--help', 'this help message' do
+        puts opt
+    end
+end
+
+args = options.parse(ARGV)
+model_file = args.shift
+task_context_name = args.shift
+
+if !model_file
+    puts "missing model file argument"
+    puts options
+    exit 1
+end
+
+if task_context_name
+    if hostname
+        Orocos::CORBA.name_service.ip = hostname
+    end
+    Orocos.initialize
+end
+
+ctrl_gui = Vizkit.default_loader.ControlUi
+ctrl_gui.initModel(model_file.dup)
+    
+if task_context_name
+    control = Orocos::Async.name_service.get task_context_name
+    #find joint state port
+    matching_ports = control.ports.find_all {|p| p.is_a? Orocos::InputPort and p.type == Types::Base::Commands::Joints}
+    if matching_ports.size > 1
+      puts "Multiple joint command consumer ports. Don't know which to use."
+      matching_ports.each do |p| puts p.name end
+      exit 1
+    end
+    if matching_ports.size < 1 
+      puts "No joint command consumer port available."
+      exit 1
+    end
+    
+    ctrl_gui.connect(SIGNAL('newVal(QString, double)')) do |name, val|
+        sample = Types::Base::Commands::Joints.new
+        sample.names = [name]
+        sample.elements = [Types::Base::JointState.new(:position => val)]
+        puts matching_ports[0].write(sample)
+        puts name, val
+    end
+end
+Vizkit.exec    
+    

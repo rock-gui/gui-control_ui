@@ -3,4 +3,9 @@
 cmake_minimum_required(VERSION 2.6)
 find_package(Rock)
 rock_init(control_ui 0.1)
+
+include(RockRuby)
 rock_standard_layout()
+
+install(PROGRAMS bin/rock-control_bot
+    DESTINATION bin)
