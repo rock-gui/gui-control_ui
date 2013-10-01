@@ -17,7 +17,7 @@ ControlUi::~ControlUi()
 
 const base::commands::Joints& ControlUi::getJoints()
 {
-    return currentJoints_;
+    return currentJointCommand;
 }
 
 void ControlUi::handleNewVal(double val)
@@ -27,7 +27,7 @@ void ControlUi::handleNewVal(double val)
     //Update currentJoints_
     size_t idx;
     try{
-        idx = currentJoints_.mapNameToIndex(name.toLatin1().data());
+        idx = currentJointCommand.mapNameToIndex(name.toLatin1().data());
     }
     catch(base::commands::Joints::InvalidName ex){
         LOG_ERROR("Invalid name was passed from QObject. This should never happen, probably there is something wrong in initModel. Expeption: %s", ex.what());
@@ -36,8 +36,8 @@ void ControlUi::handleNewVal(double val)
 
     val = val * 0.0174532925; //Degrees to radian;
 
-    currentJoints_[idx].position = val;
-    currentJoints_.time = base::Time::now();
+    currentJointCommand[idx].position = val;
+    currentJointCommand.time = base::Time::now();
 
 
     //Create joint command from base-types
@@ -94,12 +94,28 @@ void ControlUi::initModel(QString filepath)
             LOG_DEBUG("Created GUI elements for %s", name.c_str());
 
             //Fill current joint configuration
-            currentJoints_.names.push_back(name);
-            currentJoints_.elements.push_back(base::JointState());
-            currentJoints_.elements.back().position = val->value() * 0.0174532925; //Degrees to radian
+            currentJointCommand.names.push_back(name);
+            currentJointCommand.elements.push_back(base::JointState());
+            currentJointCommand.elements.back().position = val->value() * 0.0174532925; //Degrees to radian
 
             i++;
         }
     }
     setLayout(layout);
+}
+
+void ControlUi::setJointState(const base::samples::Joints &sample)
+{
+    for(int i=0; i<sample.size(); i++){
+        std::string name = sample.names[i];
+        std::vector<std::string>::iterator it =
+                std::find(currentJointsState.names.begin(), currentJointsState.names.end(), name);
+        if(it == currentJointsState.names.end()){
+            LOG_DEBUG("Received joint sample contains unknown joint name '%s'. Will ignore it's value.", name.c_str());
+            continue;
+        }
+
+        int index = currentJointsState.mapNameToIndex(name);
+        currentJointsState.elements[index] = sample.elements[i];
+    }
 }
