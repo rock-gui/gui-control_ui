@@ -106,6 +106,7 @@ void ControlUi::initModel(QString filepath)
             //Fill current joint configuration
             currentJointCommand.names.push_back(name);
             currentJointCommand.elements.push_back(base::JointState());
+
             currentJointsState.names.push_back(name);
             currentJointsState.elements.push_back(base::JointState());
             joint_forms.push_back(j_form);
