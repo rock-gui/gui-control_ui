@@ -64,7 +64,9 @@ if task_context_name
         writer = matching_ports[0].writer
         ctrl_gui.connect(SIGNAL('sendSignal()')) do 
             sample = ctrl_gui.getJoints()
-            writer.write(sample)
+            ret = writer.write(sample)
+            puts "wrote sample: #{sample.to_s()}"
+            puts "Writing returned #{ret.to_s()}"
         end
     end
 
