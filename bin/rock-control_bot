@@ -64,13 +64,7 @@ if task_context_name
         writer = matching_ports[0].writer
         ctrl_gui.connect(SIGNAL('sendSignal()')) do 
             sample = ctrl_gui.getJoints()
-            #sample = Types::Base::Commands::Joints.new
-            #sample.names = [name]
-            #sample.elements = [Types::Base::JointState.new(:position => val)]
-            
             writer.write(sample)
-            puts "writing #{sample.to_s}"
-            #puts name, val
         end
     end
 
