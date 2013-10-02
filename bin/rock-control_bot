@@ -5,6 +5,8 @@ require 'optparse'
 
 use_test_gui = true
 hostname = nil
+do_read=true
+do_write=true
 options = OptionParser.new do |opt|
     opt.banner = <<-EOD
 rock-control_bot [options] /path/to/model/file [task context to write joint commands to]
@@ -14,6 +16,12 @@ rock-control_bot [options] /path/to/model/file [task context to write joint comm
     end
     opt.on '--help', 'this help message' do
         puts opt
+    end
+    opt.on '--dont_read', "Don't read joint state from provided task context." do
+        do_read=false
+    end
+    opt.on '--dont_write', "Don't write joint commands to provided task context." do
+        do_write=false
     end
 end
 
@@ -39,24 +47,49 @@ ctrl_gui.initModel(model_file.dup)
     
 if task_context_name
     control = Orocos::Async.name_service.get task_context_name
-    #find joint state port
-    matching_ports = control.ports.find_all {|p| p.is_a? Orocos::InputPort and p.type == Types::Base::Commands::Joints}
-    if matching_ports.size > 1
-      puts "Multiple joint command consumer ports. Don't know which to use."
-      matching_ports.each do |p| puts p.name end
-      exit 1
+
+    #find commands input port
+    if do_write
+        matching_ports = control.ports.find_all {|p| p.is_a? Orocos::InputPort and p.type == Types::Base::Commands::Joints}
+        if matching_ports.size > 1
+          puts "Multiple joint command consumer ports. Don't know which to use."
+          matching_ports.each { |p| puts p.name }
+        
+          exit 1
+        end
+        if matching_ports.size < 1 
+            puts "No joint command consumer port available."
+            exit 1
+        end
+        writer = matching_ports[0].writer
+        ctrl_gui.connect(SIGNAL('sendSignal()')) do 
+            sample = ctrl_gui.getJoints()
+            #sample = Types::Base::Commands::Joints.new
+            #sample.names = [name]
+            #sample.elements = [Types::Base::JointState.new(:position => val)]
+            
+            writer.write(sample)
+            puts "writing #{sample.to_s}"
+            #puts name, val
+        end
     end
-    if matching_ports.size < 1 
-      puts "No joint command consumer port available."
-      exit 1
-    end
-    
-    ctrl_gui.connect(SIGNAL('newVal(QString, double)')) do |name, val|
-        sample = Types::Base::Commands::Joints.new
-        sample.names = [name]
-        sample.elements = [Types::Base::JointState.new(:position => val)]
-        puts matching_ports[0].write(sample)
-        puts name, val
+
+    #find state output port
+    if do_read
+        matching_ports = control.ports.find_all {|p| p.is_a? Orocos::OutputPort and p.type == Types::Base::Samples::Joints}
+        if matching_ports.size > 1
+          puts "Multiple joint state producer ports. Don't know which to use."
+          matching_ports.each { |p| puts p.name }
+          exit 1
+        end
+        if matching_ports.size < 1 
+            puts "No joint command consumer port available."
+            exit 1
+        end
+
+        matching_ports[0].connect_to do |sample,_|
+            ctrl_gui.setJointState(sample)
+        end
     end
 end
 Vizkit.exec    
