@@ -2,11 +2,16 @@
 
 require 'vizkit'
 require 'optparse'
+require 'pry'
 
 use_test_gui = true
 hostname = nil
 do_read=true
 do_write=true
+only_positive=false
+override_vel_limits=0.0
+no_effort=false
+no_velocity=false
 options = OptionParser.new do |opt|
     opt.banner = <<-EOD
 rock-control_bot [options] /path/to/model/file [task context to write joint commands to]
@@ -16,12 +21,25 @@ rock-control_bot [options] /path/to/model/file [task context to write joint comm
     end
     opt.on '--help', 'this help message' do
         puts opt
+        exit(0)
     end
     opt.on '--dont_read', "Don't read joint state from provided task context." do
         do_read=false
     end
     opt.on '--dont_write', "Don't write joint commands to provided task context." do
         do_write=false
+    end
+    opt.on '--only_positive_vel', "Use only positive velocities for sending" do
+        only_positive=true
+    end
+    opt.on '--override_vel_limits=VALUE', "Oerrride velocity limits with the value given (positive and negative limits are changed to this value)" do |val|
+        override_vel_limits=Float(val)
+    end
+    opt.on '--no_effort', "Don't generate UI elements for effort" do
+        no_effort=true
+    end
+    opt.on '--no_velocity', "Don't generate UI elements for velocity" do
+        no_velocity=true
     end
 end
 
@@ -43,6 +61,7 @@ if task_context_name
 end
 
 ctrl_gui = Vizkit.default_loader.ControlUi
+ctrl_gui.configureUi(override_vel_limits, only_positive, no_effort, no_velocity)
 ctrl_gui.initModel(model_file.dup)
     
 if task_context_name

@@ -2,8 +2,8 @@
 #include "ui_jointform.h"
 #include <math.h>
 
-JointForm::JointForm(QWidget *parent) :
-    QWidget(parent),
+JointForm::JointForm(QWidget *parent, Config config) :
+    QWidget(parent), config(config),
     ui(new Ui::JointForm)
 {
     ui->setupUi(this);
@@ -29,6 +29,21 @@ JointForm::JointForm(QWidget *parent) :
     connect(this->ui->dsbPos, SIGNAL(valueChanged(double)), this, SLOT(handlePosBoxChange(double)));
     connect(this->ui->dsbVel, SIGNAL(valueChanged(double)), this, SLOT(handleVelBoxChange(double)));
     connect(this->ui->dsbEff, SIGNAL(valueChanged(double)), this, SLOT(handleEffBoxChange(double)));
+
+    if(config.no_velocity){
+        this->ui->slVel->setEnabled(false);
+        this->ui->slVel->hide();
+        this->ui->dsbVel->setEnabled(false);
+        this->ui->dsbVel->hide();
+        this->ui->lblVel->hide();
+    }
+    if(config.no_effort){
+        this->ui->slEff->setEnabled(false);
+        this->ui->slEff->hide();
+        this->ui->dsbEff->setEnabled(false);
+        this->ui->dsbEff->hide();
+        this->ui->lblEff->hide();
+    }
 }
 
 JointForm::~JointForm()
@@ -72,20 +87,36 @@ void JointForm::setName(std::string name)
     this->ui->lblName->setText(QString::fromStdString(name));
 }
 
+void JointForm::setJointLimit(double min, double max){
+    if(config.override_vel_limit){
+        min = -fabs(config.override_vel_limit);
+        max = fabs(min);
+    }
+    if(config.positive_vel_only){
+        min = 0.;
+    }
+
+    this->ui->slVel->setMinimum(min * SLIDER_VEL_SCALE_FACTOR);
+    this->ui->slVel->setMaximum(max * SLIDER_VEL_SCALE_FACTOR);
+
+    this->ui->dsbVel->setMinimum(min);
+    this->ui->dsbVel->setMaximum(max);
+}
+
 void JointForm::initFromJointRange(const base::JointLimitRange& rng, std::string name){
     setName(name);
 
+    setJointLimit(rng.min.speed, rng.max.speed);
+
     this->ui->slPos->setMinimum(rng.min.position * SLIDER_POS_SCALE_FACTOR);
     this->ui->slPos->setMaximum(rng.max.position * SLIDER_POS_SCALE_FACTOR);
-    this->ui->slVel->setMinimum(rng.min.speed * SLIDER_VEL_SCALE_FACTOR);
-    this->ui->slVel->setMaximum(rng.max.speed * SLIDER_VEL_SCALE_FACTOR);
+
     this->ui->slEff->setMinimum(rng.min.effort * SLIDER_EFF_SCALE_FACTOR);
     this->ui->slEff->setMaximum(rng.max.effort * SLIDER_EFF_SCALE_FACTOR);
 
     this->ui->dsbPos->setMinimum(rng.min.position);
     this->ui->dsbPos->setMaximum(rng.max.position);
-    this->ui->dsbVel->setMinimum(rng.min.speed);
-    this->ui->dsbVel->setMaximum(rng.max.speed);
+
     this->ui->dsbEff->setMinimum(rng.min.effort);
     this->ui->dsbEff->setMaximum(rng.max.effort);
 }
@@ -93,17 +124,17 @@ void JointForm::initFromJointRange(const base::JointLimitRange& rng, std::string
 void JointForm::initFromJointLimits(const urdf::JointLimits& limits, std::string name){
     setName(name);
 
+    setJointLimit(-limits.velocity, limits.velocity);
+
     this->ui->slPos->setMinimum(limits.lower * SLIDER_POS_SCALE_FACTOR);
     this->ui->slPos->setMaximum(limits.upper * SLIDER_POS_SCALE_FACTOR);
-    this->ui->slVel->setMinimum(-limits.velocity * SLIDER_VEL_SCALE_FACTOR);
-    this->ui->slVel->setMaximum(limits.velocity * SLIDER_VEL_SCALE_FACTOR);
+
     this->ui->slEff->setMinimum(-limits.effort * SLIDER_EFF_SCALE_FACTOR);
     this->ui->slEff->setMaximum(limits.effort * SLIDER_EFF_SCALE_FACTOR);
 
     this->ui->dsbPos->setMinimum(limits.lower);
     this->ui->dsbPos->setMaximum(limits.upper);
-    this->ui->dsbVel->setMinimum(-limits.velocity);
-    this->ui->dsbVel->setMaximum(limits.velocity);
+
     this->ui->dsbEff->setMinimum(-limits.effort);
     this->ui->dsbEff->setMaximum(limits.effort);
 }

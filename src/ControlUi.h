@@ -26,6 +26,8 @@ public:
 
 public slots:
     void initModel(QString filepath);
+    void configureUi(double override_vel_limit, bool positive_vel_only,
+                   bool no_effort, bool no_velocity);
 
 protected slots:
     void handleUserInput(std::string, base::JointState);
@@ -49,6 +51,7 @@ protected:
     QCheckBox* send_pos;
     QCheckBox* send_vel;
     QCheckBox* send_eff;
+    JointForm::Config config;
 };
 
 #endif /* CONTROLBOT_H */

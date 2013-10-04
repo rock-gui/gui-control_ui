@@ -18,7 +18,18 @@ class JointForm : public QWidget
     Q_OBJECT
     
 public:
-    explicit JointForm(QWidget *parent = 0);
+    struct Config{
+        inline Config():
+            override_vel_limit(0), positive_vel_only(false),
+            no_effort(false), no_velocity(false){}
+
+        double override_vel_limit;
+        bool positive_vel_only;
+        bool no_effort;
+        bool no_velocity;
+    };
+
+    explicit JointForm(QWidget *parent = 0, Config=Config());
     void initFromJointRange(const base::JointLimitRange& rng, std::string name);
     void initFromJointLimits(const urdf::JointLimits& limits, std::string name);
     base::JointState getJointState();
@@ -39,12 +50,14 @@ protected slots:
     void handlePosBoxChange(double val);
     void handleVelBoxChange(double val);
     void handleEffBoxChange(double val);
+    void setJointLimit(double min, double max);
 
 signals:
     void valueChanged(std::string name, base::JointState state);
     
 private:
     Ui::JointForm *ui;
+    Config config;
 };
 
 #endif // JOINTFORM_H

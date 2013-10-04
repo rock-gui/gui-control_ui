@@ -45,6 +45,13 @@ void ControlUi::handleUserInput(std::string name, base::JointState state)
     emit(newVal(val_joint_command));
 }
 
+void ControlUi::configureUi(double override_vel_limit, bool positive_vel_only, bool no_effort, bool no_velocity){
+    config.override_vel_limit = override_vel_limit;
+    config.positive_vel_only = positive_vel_only;
+    config.no_effort = no_effort;
+    config.no_velocity = no_velocity;
+}
+
 
 void ControlUi::initModel(QString filepath)
 {
@@ -87,7 +94,7 @@ void ControlUi::initModel(QString filepath)
         std::string name = it->first;
         if(joint->type != urdf::Joint::FIXED){
             //Create user interface elements
-            JointForm *j_form = new JointForm();
+            JointForm *j_form = new JointForm(this, config);
             j_form->setProperty("name", QString(name.c_str()));
             if(joint->limits){
                 j_form->initFromJointLimits(*(joint->limits), name);
