@@ -12,6 +12,8 @@ only_positive=false
 override_vel_limits=0.0
 no_effort=false
 no_velocity=false
+@force_cmd_port=""
+@force_state_port=""
 options = OptionParser.new do |opt|
     opt.banner = <<-EOD
 rock-control_bot [options] /path/to/model/file [task context to write joint commands to]
@@ -41,6 +43,14 @@ rock-control_bot [options] /path/to/model/file [task context to write joint comm
     opt.on '--no_velocity', "Don't generate UI elements for velocity" do
         no_velocity=true
     end
+    opt.on '--joint_command_port=PORT_NAME', '-c=PORT_NAME' , "Force joint command port to be PORT NAME" do |val|
+        puts "Will take port '#{val}' for writing commands to"
+        @force_cmd_port = val.dup
+    end
+    opt.on '--joint_state_port=PORT_NAME', '-s=PORT_NAME' , "Force joint state port to be PORT NAME" do |val|
+        puts "Will take port '#{val}' for reading state from"
+        @force_state_port = val.dup
+    end
 end
 
 args = options.parse(ARGV)
@@ -69,18 +79,29 @@ if task_context_name
 
     #find commands input port
     if do_write
-        matching_ports = control.ports.find_all {|p| p.is_a? Orocos::InputPort and p.type == Types::Base::Commands::Joints}
-        if matching_ports.size > 1
-          puts "Multiple joint command consumer ports. Don't know which to use."
-          matching_ports.each { |p| puts p.name }
-        
-          exit 1
+        puts "hihih", @force_cmd_port
+        if @force_cmd_port == ""
+            matching_ports = control.ports.find_all {|p| p.is_a? Orocos::InputPort and p.type == Types::Base::Commands::Joints}
+            if matching_ports.size > 1
+              puts "Multiple joint command consumer ports. Don't know which to use."
+              matching_ports.each { |p| puts p.name }
+            
+              exit 1
+            end
+            if matching_ports.size < 1 
+                puts "No joint command consumer port available."
+                exit 1
+            end
+            writer = matching_ports[0].writer
+        else
+            port = control.port(@force_cmd_port)
+            puts port
+            if not port
+               puts "Joint state port was forced to be '#{@force_cmd_port}' but could not be found on task #{task_context_name}"
+               exit 1
+            end
+            writer = port.writer
         end
-        if matching_ports.size < 1 
-            puts "No joint command consumer port available."
-            exit 1
-        end
-        writer = matching_ports[0].writer
         ctrl_gui.connect(SIGNAL('sendSignal()')) do 
             sample = ctrl_gui.getJoints()
             ret = writer.write(sample)
@@ -91,18 +112,31 @@ if task_context_name
 
     #find state output port
     if do_read
-        matching_ports = control.ports.find_all {|p| p.is_a? Orocos::OutputPort and p.type == Types::Base::Samples::Joints}
-        if matching_ports.size > 1
-          puts "Multiple joint state producer ports. Don't know which to use."
-          matching_ports.each { |p| puts p.name }
-          exit 1
-        end
-        if matching_ports.size < 1 
-            puts "No joint command consumer port available."
-            exit 1
+        command_port = nil
+        puts "hahah", @force_state_port
+        if @force_state_port == ""
+            matching_ports = control.ports.find_all {|p| p.is_a? Orocos::OutputPort and p.type == Types::Base::Samples::Joints}
+            if matching_ports.size > 1
+              puts "Multiple joint state producer ports. Don't know which to use."
+              matching_ports.each { |p| puts p.name }
+              exit 1
+            end
+            if matching_ports.size < 1 
+                puts "No joint command consumer port available."
+                exit 1
+            end
+            command_port = matching_ports[0]
+        else
+            port = control.port(@force_state_port)
+            puts port
+            if not port
+               puts "Joint command port was forced to be '#{@force_state_port}' but could not be found on task #{task_context_name}"
+               exit 1
+            end
+            command_port = port
         end
 
-        matching_ports[0].connect_to do |sample,_|
+        command_port.connect_to do |sample,_|
             ctrl_gui.setJointState(sample)
         end
     end
