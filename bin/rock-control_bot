@@ -32,6 +32,7 @@ if task_context_name
         Orocos::CORBA.name_service.ip = hostname
     end
     Orocos.initialize
+    Orocos.load_typekit("std")
 end
 
 ctrl_gui = Vizkit.default_loader.ControlUi
