@@ -79,7 +79,6 @@ if task_context_name
 
     #find commands input port
     if do_write
-        puts "hihih", @force_cmd_port
         if @force_cmd_port == ""
             matching_ports = control.ports.find_all {|p| p.is_a? Orocos::InputPort and p.type == Types::Base::Commands::Joints}
             if matching_ports.size > 1
@@ -105,15 +104,12 @@ if task_context_name
         ctrl_gui.connect(SIGNAL('sendSignal()')) do 
             sample = ctrl_gui.getJoints()
             ret = writer.write(sample)
-            puts "wrote sample: #{sample.to_s()}"
-            puts "Writing returned #{ret.to_s()}"
         end
     end
 
     #find state output port
     if do_read
-        command_port = nil
-        puts "hahah", @force_state_port
+        state_port = nil
         if @force_state_port == ""
             matching_ports = control.ports.find_all {|p| p.is_a? Orocos::OutputPort and p.type == Types::Base::Samples::Joints}
             if matching_ports.size > 1
@@ -125,7 +121,7 @@ if task_context_name
                 puts "No joint command consumer port available."
                 exit 1
             end
-            command_port = matching_ports[0]
+            state_port = matching_ports[0]
         else
             port = control.port(@force_state_port)
             puts port
@@ -133,11 +129,11 @@ if task_context_name
                puts "Joint command port was forced to be '#{@force_state_port}' but could not be found on task #{task_context_name}"
                exit 1
             end
-            command_port = port
+            state_port = port
         end
 
-        command_port.connect_to do |sample,_|
-            ctrl_gui.setJointState(sample)
+        state_port.on_data do |data| 
+             ctrl_gui.setJointState(data)
         end
     end
 end
