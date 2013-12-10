@@ -4,6 +4,7 @@
 #include <fstream>
 #include <QVBoxLayout>
 #include <QScrollArea>
+#include <yaml-cpp/yaml.h>
 
 ControlUi::ControlUi(QWidget *parent)
     : QWidget(parent)
@@ -52,18 +53,75 @@ void ControlUi::configureUi(double override_vel_limit, bool positive_vel_only, b
     config.no_velocity = no_velocity;
 }
 
+void ControlUi::initFromURDF(QString filepath){
 
-void ControlUi::initModel(QString filepath)
-{
-    //Read the urdf file
     std::ifstream file(filepath.toStdString().c_str());
     std::string xml((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     boost::shared_ptr<urdf::ModelInterface> urdf_model = urdf::parseURDF(xml);
 
+    std::map<std::string, boost::shared_ptr<urdf::Joint> >::iterator it;
+    base::JointLimits limits;
+    for (it=urdf_model->joints_.begin(); it!=urdf_model->joints_.end(); ++it){
+        boost::shared_ptr<urdf::Joint> joint = it->second;
+        base::JointLimitRange range;
+
+        if(joint->type != urdf::Joint::FIXED){
+            if(joint->limits){
+                range.max.position = joint->limits->upper;
+                range.min.position = joint->limits->lower;
+                range.max.speed = joint->limits->velocity;
+                range.min.speed = -joint->limits->velocity;
+                range.max.effort = joint->limits->effort;
+                range.min.effort = -joint->limits->effort;
+                limits.names.push_back(it->first);
+                limits.elements.push_back(range);
+            }
+        }
+    }
+
+    initModel(limits);
+}
+
+void ControlUi::initFromYaml(QString filepath){
+
+    std::ifstream file(filepath.toStdString().c_str());
+    YAML::Parser parser(file);
+    YAML::Node doc;
+    parser.GetNextDocument(doc);
+    const YAML::Node &names_node = doc["limits"]["names"];
+    const YAML::Node &elements_node = doc["limits"]["elements"];
+
+
+    if(elements_node.size() != names_node.size()){
+        LOG_ERROR("Invalid limits yaml file. Size of names is different than size of elements");
+        throw std::invalid_argument("Invalid yaml file");
+    }
+
+    base::JointLimits limits;
+    for(uint i = 0; i < names_node.size(); i++){
+        std::string name;
+        names_node[i] >> name;
+        limits.names.push_back(name);
+
+        base::JointLimitRange range;
+        elements_node[i]["max"]["position"] >> range.max.position;
+        elements_node[i]["min"]["position"] >> range.min.position;
+        elements_node[i]["max"]["speed"] >> range.max.speed;
+        elements_node[i]["min"]["speed"] >> range.min.speed;
+        elements_node[i]["max"]["effort"] >> range.max.effort;
+        elements_node[i]["min"]["effort"] >> range.min.effort;
+
+        limits.elements.push_back(range);
+    }
+
+    initModel(limits);
+}
+
+void ControlUi::initModel(const base::JointLimits &limits){
+
     //
     // Set up user interface
     //
-    std::map<std::string, boost::shared_ptr<urdf::Joint> >::iterator it;
     QVBoxLayout *vertical_layout = new QVBoxLayout;
 
     //Check boxes
@@ -86,41 +144,33 @@ void ControlUi::initModel(QString filepath)
     QWidget* joints = new QWidget();
     QGridLayout* layout = new QGridLayout(joints);
 
-//    QGridLayout *layout = new QGridLayout;
-    int i=0;
+    //    QGridLayout *layout = new QGridLayout;
     const int columns=5;
-    for (it=urdf_model->joints_.begin(); it!=urdf_model->joints_.end(); ++it){
-        boost::shared_ptr<urdf::Joint> joint = it->second;
-        std::string name = it->first;
-        if(joint->type != urdf::Joint::FIXED){
-            //Create user interface elements
-            JointForm *j_form = new JointForm(this, config);
-            j_form->setProperty("name", QString(name.c_str()));
-            if(joint->limits){
-                j_form->initFromJointLimits(*(joint->limits), name);
-            }
-            else{
-                j_form->setName(name);
-            }
-            connect(j_form, SIGNAL(valueChanged(std::string, base::JointState)), this, SLOT(handleUserInput(std::string, base::JointState)));
+    for (uint i = 0; i < limits.size(); i++){
+        std::string name = limits.names[i];
 
-            int row=i/columns;
-            int column=i%columns;
-            layout->addWidget(j_form, row, column);
+        //Create user interface elements
+        JointForm *j_form = new JointForm(this, config);
+        j_form->setProperty("name", QString(name.c_str()));
+        j_form->initFromJointRange(limits[i], name);
 
-            LOG_DEBUG("Created GUI elements for %s", name.c_str());
+        connect(j_form, SIGNAL(valueChanged(std::string, base::JointState)), this, SLOT(handleUserInput(std::string, base::JointState)));
 
-            //Fill current joint configuration
-            currentJointCommand.names.push_back(name);
-            currentJointCommand.elements.push_back(base::JointState());
+        int row=i/columns;
+        int column=i%columns;
+        layout->addWidget(j_form, row, column);
 
-            currentJointsState.names.push_back(name);
-            currentJointsState.elements.push_back(base::JointState());
-            joint_forms.push_back(j_form);
+        LOG_DEBUG("Created GUI elements for %s", name.c_str());
 
-            i++;
-        }
+        //Fill current joint configuration
+        currentJointCommand.names.push_back(name);
+        currentJointCommand.elements.push_back(base::JointState());
+
+        currentJointsState.names.push_back(name);
+        currentJointsState.elements.push_back(base::JointState());
+        joint_forms.push_back(j_form);
     }
+
     joints->setLayout(layout);
     joints->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Minimum);
     scrollarea->setWidget(joints);
@@ -197,7 +247,7 @@ void ControlUi::triggerSend(){
 void ControlUi::setJointState(const base::samples::Joints &sample)
 {
     if(doUpdate){
-        for(int i=0; i<sample.size(); i++){
+        for(uint i=0; i<sample.size(); i++){
             std::string name = sample.names[i];
             std::vector<std::string>::iterator it =
                     std::find(currentJointsState.names.begin(), currentJointsState.names.end(), name);

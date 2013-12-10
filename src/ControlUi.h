@@ -1,6 +1,7 @@
 #ifndef CONTROLBOT_H
 #define CONTROLBOT_H
 
+#include <base/JointLimits.hpp>
 #include <QtGui>
 #include <base/commands/Joints.hpp>
 #include <jointform.h>
@@ -19,22 +20,25 @@ public:
 
 public:
     inline bool getGenerateJointStateUi(){return generateJointStateUi;}
-    inline bool setGenerateJointStateUi(bool generate){generateJointStateUi=generate;}
+    inline bool setGenerateJointStateUi(bool generate){generateJointStateUi=generate; return  true;}
 
     Q_INVOKABLE void setJointState(base::samples::Joints const &sample);
     Q_INVOKABLE base::commands::Joints getJoints();
 
+
 public slots:
-    void initModel(QString filepath);
+
     void configureUi(double override_vel_limit, bool positive_vel_only,
                    bool no_effort, bool no_velocity);
+     void initFromYaml(QString filepath);
+     void initFromURDF(QString filepath);
 
 protected slots:
     void handleUserInput(std::string, base::JointState);
     void triggerSend();
     void handleUpdateCheckbox(bool update);
     void handleKeepSendingCheckbox(bool doSend);
-
+    void initModel(const base::JointLimits &limits);
 signals:
     void newVal(base::commands::Joints val);
     void sendSignal();

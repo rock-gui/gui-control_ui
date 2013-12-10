@@ -72,7 +72,17 @@ end
 
 ctrl_gui = Vizkit.default_loader.ControlUi
 ctrl_gui.configureUi(override_vel_limits, only_positive, no_effort, no_velocity)
-ctrl_gui.initModel(model_file.dup)
+
+yaml_file_ext = [".yml", ".yaml"]
+urdf_file_ext = [".urdf", ".xml"]
+
+if yaml_file_ext.include? File.extname(model_file)
+    ctrl_gui.initFromYaml(model_file.dup)
+elsif urdf_file_ext.include? File.extname(model_file)
+    ctrl_gui.initFromURDF(model_file.dup)
+else
+    print "Invalid model file format. Accepts only ", yaml_file_ext, " or ", urdf_file_ext
+end
     
 if task_context_name
     control = Orocos::Async.name_service.get task_context_name

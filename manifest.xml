@@ -9,4 +9,5 @@
   <depend package="base/types" />
   <depend package="control/urdfdom" />
   <depend package="gui/vizkit" />
+  <depend package="external/yaml-cpp" />
 </package>
