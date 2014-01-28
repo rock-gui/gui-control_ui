@@ -90,8 +90,9 @@ end
 if task_context_name
     control = Orocos::Async.name_service.get task_context_name
 
-    #find commands input port
     if do_write
+        #Determine input port name
+        port_name = ""
         if @force_cmd_port == ""
             matching_ports = control.ports.find_all {|p| p.is_a? Orocos::InputPort and p.type == Types::Base::Commands::Joints}
             if matching_ports.size > 1
@@ -104,25 +105,32 @@ if task_context_name
                 puts "No joint command consumer port available."
                 exit 1
             end
-            writer = matching_ports[0].writer
+            port_name = matching_ports[0].name
         else
-            port = control.port(@force_cmd_port)
-            puts port
-            if not port
-               puts "Joint state port was forced to be '#{@force_cmd_port}' but could not be found on task #{task_context_name}"
-               exit 1
-            end
-            writer = port.writer
+            puts "Joint state port was forced to be '#{@force_cmd_port}'"
+            port_name = @force_cmd_port
         end
+        
+        #Create writer
+        port = control.port(port_name)
+        puts port
+        if not port
+           puts "Port #{port_name} could not be found on task #{task_context_name}"
+           exit 1
+        end
+        writer = port.writer
+
+        #Connect to gui
         ctrl_gui.connect(SIGNAL('sendSignal()')) do 
             sample = ctrl_gui.getJoints()
             ret = writer.write(sample)
         end
     end
 
-    #find state output port
+    
     if do_read
-        state_port = nil
+        #Determine output port name
+        port_name = ""
         if @force_state_port == ""
             matching_ports = control.ports.find_all {|p| p.is_a? Orocos::OutputPort and p.type == Types::Base::Samples::Joints}
             if matching_ports.size > 1
@@ -134,15 +142,16 @@ if task_context_name
                 puts "No joint command consumer port available."
                 exit 1
             end
-            state_port = matching_ports[0]
+            port_name = matching_ports[0].name
         else
-            port = control.port(@force_state_port)
-            puts port
-            if not port
-               puts "Joint command port was forced to be '#{@force_state_port}' but could not be found on task #{task_context_name}"
-               exit 1
-            end
-            state_port = port
+            port_name = @force_state_port
+            puts "Joint command port was forced to be '#{@force_state_port}'"
+        end
+        state_port = control.port(port_name)
+
+        if not state_port
+           puts "Port #{port_name} could not be found on task #{task_context_name}"
+           exit 1
         end
 
         state_port.on_data do |data| 
