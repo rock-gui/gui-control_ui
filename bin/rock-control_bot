@@ -12,11 +12,13 @@ only_positive=false
 override_vel_limits=0.0
 no_effort=false
 no_velocity=false
-@force_cmd_port=""
-@force_state_port=""
+@command_port_name = nil
+@state_port_name = nil
+@command_task_name = nil
+@state_task_name = nil
 options = OptionParser.new do |opt|
     opt.banner = <<-EOD
-rock-control_bot [options] /path/to/model/file [task context to write joint commands to]
+rock-control_bot [options] /path/to/model/file
     EOD
     opt.on '--host=HOSTNAME', String, 'the host we should contact to find RTT tasks' do |host|
         hostname = host
@@ -43,35 +45,51 @@ rock-control_bot [options] /path/to/model/file [task context to write joint comm
     opt.on '--no_velocity', "Don't generate UI elements for velocity" do
         no_velocity=true
     end
-    opt.on '--joint_command_port=PORT_NAME', '-c=PORT_NAME' , "Force joint command port to be PORT NAME" do |val|
+    opt.on '--joint_command_port=TASK_CONTEXT_NAME:PORT_NAME', '-c=TASK_CONTEXT_NAME:PORT_NAME' , "Force joint command port to be PORT_NAME of task TASK_CONTEXT_NAME" do |val|
         puts "Will take port '#{val}' for writing commands to"
-        @force_cmd_port = val.dup
+        splitted = val.split(':')
+        if splitted.size != 2
+            raise("Definition of command port must follow the pattern 'TASK_CONTEXT_NAME:PORT_NAME'. Example: --joint_command_port=my_task:the_port")
+        end
+        @command_task_name = splitted[0]
+        @command_port_name = splitted[1]
     end
-    opt.on '--joint_state_port=PORT_NAME', '-s=PORT_NAME' , "Force joint state port to be PORT NAME" do |val|
+    opt.on '--joint_state_port=TASK_CONTEXT_NAME:PORT_NAME', '-s=TASK_CONTEXT_NAME:PORT_NAME' , "Force joint state port to be PORT_NAME of task TASK_CONTEXT_NAME" do |val|
         puts "Will take port '#{val}' for reading state from"
-        @force_state_port = val.dup
+        splitted = val.split(':')
+        if splitted.size != 2
+            raise("Definition of command port must follow the pattern 'TASK_CONTEXT_NAME:PORT_NAME'. Example: --joint_command_port=my_task:the_port")
+        end
+        @state_task_name = splitted[0]
+        @state_port_name = splitted[1]
     end
 end
 
 args = options.parse(ARGV)
 model_file = args.shift
-task_context_name = args.shift
 
-if !model_file
-    puts "missing model file argument"
-    puts options
-    exit 1
+if(!@command_task_name)
+    raise("No command task given")
+end
+if(!@command_port_name)
+    raise("No command port given")
+end
+if(!@state_task_name)
+    raise("No state task given")
+end
+if(!@state_port_name)
+    raise("No state port given")
+end
+if(!model_file)
+    raise("No nodel file given")
 end
 
-if task_context_name
-    if hostname
-        Orocos::CORBA.name_service.ip = hostname
-    end
-    Orocos.initialize
-    Orocos.load_typekit('base')
-else
-    puts "No task context was given!"
+if hostname
+    Orocos::CORBA.name_service.ip = hostname
 end
+
+Orocos.initialize
+Orocos.load_typekit('base')
 
 ctrl_gui = Vizkit.default_loader.ControlUi
 ctrl_gui.configureUi(override_vel_limits, only_positive, no_effort, no_velocity)
@@ -87,77 +105,37 @@ else
     print "Invalid model file format. Accepts only ", yaml_file_ext, " or ", urdf_file_ext
 end
     
-if task_context_name
-    control = Orocos::Async.name_service.get task_context_name
 
-    if do_write
-        #Determine input port name
-        port_name = ""
-        if @force_cmd_port == ""
-            matching_ports = control.ports.find_all {|p| p.is_a? Orocos::InputPort and p.type == Types::Base::Commands::Joints}
-            if matching_ports.size > 1
-              puts "Multiple joint command consumer ports. Don't know which to use."
-              matching_ports.each { |p| puts p.name }
-            
-              exit 1
-            end
-            if matching_ports.size < 1 
-                puts "No joint command consumer port available."
-                exit 1
-            end
-            port_name = matching_ports[0].name
-        else
-            puts "Joint state port was forced to be '#{@force_cmd_port}'"
-            port_name = @force_cmd_port
-        end
-        
-        #Create writer
-        port = control.port(port_name)
-        puts port
-        if not port
-           puts "Port #{port_name} could not be found on task #{task_context_name}"
-           exit 1
-        end
-        writer = port.writer
+command_task = Orocos::Async.name_service.get @command_task_name
+state_task = Orocos::Async.name_service.get @state_task_name
 
-        #Connect to gui
-        ctrl_gui.connect(SIGNAL('sendSignal()')) do 
-            sample = ctrl_gui.getJoints()
-            ret = writer.write(sample)
-        end
+if do_write
+    #Create writer
+    command_port = command_task.port(@command_port_name)
+    if not command_port
+       raise("Port #{@command_port_name} could not be found on task #{@command_task_name}")
     end
+    writer = command_port.writer
 
-    
-    if do_read
-        #Determine output port name
-        port_name = ""
-        if @force_state_port == ""
-            matching_ports = control.ports.find_all {|p| p.is_a? Orocos::OutputPort and p.type == Types::Base::Samples::Joints}
-            if matching_ports.size > 1
-              puts "Multiple joint state producer ports. Don't know which to use."
-              matching_ports.each { |p| puts p.name }
-              exit 1
-            end
-            if matching_ports.size < 1 
-                puts "No joint command consumer port available."
-                exit 1
-            end
-            port_name = matching_ports[0].name
-        else
-            port_name = @force_state_port
-            puts "Joint command port was forced to be '#{@force_state_port}'"
-        end
-        state_port = control.port(port_name)
-
-        if not state_port
-           puts "Port #{port_name} could not be found on task #{task_context_name}"
-           exit 1
-        end
-
-        state_port.on_data do |data| 
-             ctrl_gui.setJointState(data)
-        end
+    #Connect to gui
+    ctrl_gui.connect(SIGNAL('sendSignal()')) do 
+        sample = ctrl_gui.getJoints()
+        ret = writer.write(sample)
     end
 end
+
+
+if do_read
+    state_port = state_task.port(@state_port_name)
+    if not state_port
+       puts "Port #{@state_port_name} could not be found on task #{@state_task_name}"
+       exit 1
+    end
+
+    state_port.on_data do |data| 
+         ctrl_gui.setJointState(data)
+    end
+end
+
 Vizkit.exec    
     
