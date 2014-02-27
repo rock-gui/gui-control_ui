@@ -9,3 +9,6 @@ rock_standard_layout()
 
 install(PROGRAMS bin/rock-control_bot
     DESTINATION bin)
+
+install(PROGRAMS bin/bldc_control_joints_gui
+    DESTINATION bin)

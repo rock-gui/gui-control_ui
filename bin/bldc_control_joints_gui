@@ -8,8 +8,8 @@ only_positive=false
 override_vel_limits=0.0
 no_effort=false
 no_velocity=false
-@driver_port_name = nil
-options = OptionParser.new do |opt|
+@driver_task_name = nil
+OptionParser.new do |opt|
     opt.on '--host=HOSTNAME', String, 'the host we should contact to find RTT tasks' do |host|
         hostname = host
     end
@@ -32,10 +32,10 @@ options = OptionParser.new do |opt|
     opt.on '--driver=DRIVER_TASK_NAME', String, "BLDC driver task name" do |name|
        @driver_task_name = name 
     end
-end
+end.parse!
 
-if(!@driver_port_name)
-    raise("No driver port given")
+if @driver_task_name.nil?
+    raise("No driver task name given")
 end
 
 Orocos::CORBA.name_service.ip = hostname
@@ -47,27 +47,27 @@ ctrl_gui.configureUi( override_vel_limits, only_positive, no_effort, no_velocity
 
 driver_task = Orocos::Async.name_service.get @driver_task_name
 
-joints_config = driver_task.joints_config
-jointLimits = Base::JointLimits.new
+joints_config = driver_task.property("joints_config").read
+jointLimits = Types::Base::JointLimits.new
 joints_config.each do |joint_config|
-    jointLimits.names.push_back( joint_config.jointName )
-    jointLimitRange = Base::JointLimitRange.new
-    jointLimitRange.min = joint_config.positionCtrl.inputLimit.lower
-    jointLimitRange.max = joint_config.positionCtrl.inputLimit.upper
-    jointLimits.elements.push_back( jointLimitRange )
+    jointLimits.names.push( joint_config.jointName )
+    jointLimitRange = Types::Base::JointLimitRange.new
+    jointLimitRange.min.position = joint_config.positionCtrl.inputLimit.lower
+    jointLimitRange.max.position = joint_config.positionCtrl.inputLimit.upper
+    jointLimits.elements.push( jointLimitRange )
 end
 
 ctrl_gui.initModel( jointLimits )
 
 @initial_data = true
 driver_task.port("joints_status").on_data do |data| 
-    if @initial_data
+#    if @initial_data
         ctrl_gui.setJointState(data)
-        @initial_data = false
-    end
+#        @initial_data = false
+#    end
 end
 
-@writer = driver_task.port("joints_command").command_port.writer
+@writer = driver_task.port("joints_command").writer
 ctrl_gui.connect(SIGNAL('sendSignal()')) do 
     sample = ctrl_gui.getJoints()
     @writer.write(sample)
