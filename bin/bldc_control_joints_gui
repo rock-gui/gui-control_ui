@@ -54,6 +54,10 @@ joints_config.each do |joint_config|
     jointLimitRange = Types::Base::JointLimitRange.new
     jointLimitRange.min.position = joint_config.positionCtrl.inputLimit.lower
     jointLimitRange.max.position = joint_config.positionCtrl.inputLimit.upper
+    jointLimitRange.min.speed = -joint_config.speedCtrl.inputLimit.upper
+    jointLimitRange.max.speed =  joint_config.speedCtrl.inputLimit.upper
+    jointLimitRange.min.effort = -joint_config.currentCtrl.inputLimit.upper * joint_config.motorConstant * joint_config.gearRatio
+    jointLimitRange.max.effort =  joint_config.currentCtrl.inputLimit.upper * joint_config.motorConstant * joint_config.gearRatio
     jointLimits.elements.push( jointLimitRange )
 end
 
