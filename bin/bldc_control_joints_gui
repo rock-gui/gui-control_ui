@@ -47,28 +47,30 @@ ctrl_gui.configureUi( override_vel_limits, only_positive, no_effort, no_velocity
 
 driver_task = Orocos::Async.name_service.get @driver_task_name
 
-joints_config = driver_task.property("joints_config").read
-jointLimits = Types::Base::JointLimits.new
-joints_config.each do |joint_config|
-    jointLimits.names.push( joint_config.jointName )
-    jointLimitRange = Types::Base::JointLimitRange.new
-    jointLimitRange.min.position = joint_config.positionCtrl.inputLimit.lower
-    jointLimitRange.max.position = joint_config.positionCtrl.inputLimit.upper
-    jointLimitRange.min.speed = -joint_config.speedCtrl.inputLimit.upper
-    jointLimitRange.max.speed =  joint_config.speedCtrl.inputLimit.upper
-    jointLimitRange.min.effort = -joint_config.currentCtrl.inputLimit.upper * joint_config.motorConstant * joint_config.gearRatio
-    jointLimitRange.max.effort =  joint_config.currentCtrl.inputLimit.upper * joint_config.motorConstant * joint_config.gearRatio
-    jointLimits.elements.push( jointLimitRange )
+driver_task.on_reachable do
+    joints_config = driver_task.property("joints_config").read
+    jointLimits = Types::Base::JointLimits.new
+    joints_config.each do |joint_config|
+        jointLimits.names.push( joint_config.jointName )
+        jointLimitRange = Types::Base::JointLimitRange.new
+        jointLimitRange.min.position = joint_config.positionCtrl.inputLimit.lower
+        jointLimitRange.max.position = joint_config.positionCtrl.inputLimit.upper
+        jointLimitRange.min.speed = -joint_config.speedCtrl.inputLimit.upper
+        jointLimitRange.max.speed =  joint_config.speedCtrl.inputLimit.upper
+        jointLimitRange.min.effort = -joint_config.currentCtrl.inputLimit.upper * joint_config.motorConstant * joint_config.gearRatio
+        jointLimitRange.max.effort =  joint_config.currentCtrl.inputLimit.upper * joint_config.motorConstant * joint_config.gearRatio
+        jointLimits.elements.push( jointLimitRange )
+    end
+    ctrl_gui.initModel( jointLimits )
+    ctrl_gui.setEnable( true )
 end
 
-ctrl_gui.initModel( jointLimits )
+driver_task.on_unreachable do
+    ctrl_gui.setEnable( false )
+end
 
-@initial_data = true
 driver_task.port("joints_status").on_data do |data| 
-#    if @initial_data
-        ctrl_gui.setJointState(data)
-#        @initial_data = false
-#    end
+    ctrl_gui.setJointState(data)
 end
 
 @writer = driver_task.port("joints_command").writer
