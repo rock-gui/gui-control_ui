@@ -8,7 +8,8 @@ only_positive=false
 override_vel_limits=0.0
 no_effort=false
 no_velocity=false
-@driver_task_name = nil
+driver_task_name = nil
+
 OptionParser.new do |opt|
     opt.on '--host=HOSTNAME', String, 'the host we should contact to find RTT tasks' do |host|
         hostname = host
@@ -30,11 +31,11 @@ OptionParser.new do |opt|
         no_velocity=true
     end
     opt.on '--driver=DRIVER_TASK_NAME', String, "BLDC driver task name" do |name|
-       @driver_task_name = name 
+       driver_task_name = name 
     end
 end.parse!
 
-if @driver_task_name.nil?
+if driver_task_name.nil?
     raise("No driver task name given")
 end
 
@@ -44,39 +45,42 @@ Orocos.load_typekit('base')
 
 ctrl_gui = Vizkit.default_loader.ControlUi
 ctrl_gui.configureUi( override_vel_limits, only_positive, no_effort, no_velocity )
+configured = false
 
-driver_task = Orocos::Async.name_service.get @driver_task_name
-
-driver_task.on_reachable do
-    joints_config = driver_task.property("joints_config").read
-    jointLimits = Types::Base::JointLimits.new
-    joints_config.each do |joint_config|
-        jointLimits.names.push( joint_config.jointName )
-        jointLimitRange = Types::Base::JointLimitRange.new
-        jointLimitRange.min.position = joint_config.positionCtrl.inputLimit.lower
-        jointLimitRange.max.position = joint_config.positionCtrl.inputLimit.upper
-        jointLimitRange.min.speed = -joint_config.speedCtrl.inputLimit.upper
-        jointLimitRange.max.speed =  joint_config.speedCtrl.inputLimit.upper
-        jointLimitRange.min.effort = -joint_config.currentCtrl.inputLimit.upper * joint_config.motorConstant * joint_config.gearRatio
-        jointLimitRange.max.effort =  joint_config.currentCtrl.inputLimit.upper * joint_config.motorConstant * joint_config.gearRatio
-        jointLimits.elements.push( jointLimitRange )
+ctrl_gui.connect_to_task driver_task_name do |task|
+    task.on_reachable do
+        driver_task = Orocos::Async.name_service.get driver_task_name
+        unless configured
+            joints_config = driver_task.property("joints_config").read
+            jointLimits = Types::Base::JointLimits.new
+            joints_config.each do |joint_config|
+                jointLimits.names.push( joint_config.jointName )
+                jointLimitRange = Types::Base::JointLimitRange.new
+                jointLimitRange.min.position = joint_config.positionCtrl.inputLimit.lower
+                jointLimitRange.max.position = joint_config.positionCtrl.inputLimit.upper
+                jointLimitRange.min.speed = -joint_config.speedCtrl.inputLimit.upper
+                jointLimitRange.max.speed =  joint_config.speedCtrl.inputLimit.upper
+                jointLimitRange.min.effort = -joint_config.currentCtrl.inputLimit.upper * joint_config.motorConstant * joint_config.gearRatio
+                jointLimitRange.max.effort =  joint_config.currentCtrl.inputLimit.upper * joint_config.motorConstant * joint_config.gearRatio
+                jointLimits.elements.push( jointLimitRange )
+            end
+            ctrl_gui.initModel( jointLimits )
+            configured = true
+        end
+        ctrl_gui.setEnabled( true )
+        driver_task.port("joints_status").on_data do |data| 
+            ctrl_gui.setJointState(data)
+        end
+        writer = driver_task.port("joints_command").writer
+        ctrl_gui.connect(SIGNAL('sendSignal()')) do 
+            sample = ctrl_gui.getJoints()
+            writer.write(sample)
+        end
     end
-    ctrl_gui.initModel( jointLimits )
-    ctrl_gui.setEnable( true )
+    task.on_unreachable do
+        ctrl_gui.setEnabled( false )
+    end
 end
 
-driver_task.on_unreachable do
-    ctrl_gui.setEnable( false )
-end
-
-driver_task.port("joints_status").on_data do |data| 
-    ctrl_gui.setJointState(data)
-end
-
-@writer = driver_task.port("joints_command").writer
-ctrl_gui.connect(SIGNAL('sendSignal()')) do 
-    sample = ctrl_gui.getJoints()
-    @writer.write(sample)
-end
-
+ctrl_gui.show
 Vizkit.exec    
