@@ -68,16 +68,16 @@ end
 args = options.parse(ARGV)
 model_file = args.shift
 
-if(!@command_task_name)
+if(!@command_task_name and do_write)
     raise("No command task given")
 end
-if(!@command_port_name)
+if(!@command_port_name and do_write)
     raise("No command port given")
 end
-if(!@state_task_name)
+if(!@state_task_name and do_read)
     raise("No state task given")
 end
-if(!@state_port_name)
+if(!@state_port_name and do_read)
     raise("No state port given")
 end
 if(!model_file)
@@ -104,12 +104,9 @@ elsif urdf_file_ext.include? File.extname(model_file)
 else
     print "Invalid model file format. Accepts only ", yaml_file_ext, " or ", urdf_file_ext
 end
-    
-
-command_task = Orocos::Async.name_service.get @command_task_name
-state_task = Orocos::Async.name_service.get @state_task_name
 
 if do_write
+    command_task = Orocos::Async.name_service.get @command_task_name
     #Create writer
     command_port = command_task.port(@command_port_name)
     if not command_port
@@ -124,8 +121,8 @@ if do_write
     end
 end
 
-
 if do_read
+    state_task = Orocos::Async.name_service.get @state_task_name
     state_port = state_task.port(@state_port_name)
     if not state_port
        puts "Port #{@state_port_name} could not be found on task #{@state_task_name}"
