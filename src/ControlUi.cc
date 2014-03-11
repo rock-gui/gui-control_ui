@@ -107,9 +107,17 @@ void ControlUi::initFromYaml(QString filepath){
         elements_node[i]["max"]["position"] >> range.max.position;
         elements_node[i]["min"]["position"] >> range.min.position;
         elements_node[i]["max"]["speed"] >> range.max.speed;
-        elements_node[i]["min"]["speed"] >> range.min.speed;
+        try{
+            elements_node[i]["min"]["speed"] >> range.min.speed;
+        }catch(...){
+            range.min.speed = -range.max.speed;
+        }
         elements_node[i]["max"]["effort"] >> range.max.effort;
-        elements_node[i]["min"]["effort"] >> range.min.effort;
+        try{
+            elements_node[i]["min"]["effort"] >> range.min.effort;
+        }catch(...){
+            range.min.effort = -range.max.effort;
+        }
 
         limits.elements.push_back(range);
     }
