@@ -219,7 +219,17 @@ void ControlUi::initModel(const base::JointLimits &limits){
 void ControlUi::handleUpdateCheckbox(bool update)
 {
     doUpdate = update;
+    base::JointState js;
     for(uint i=0; i<joint_forms.size(); i++){
+        //When switching from updating mode (joint forms are disabled) to non-updating mode
+        //(joint forms are enabled to generate commands), ensure to set speeds to zero. They
+        //are treated as reference values from now on. We want the system to stand still
+        //initially
+        if(update == false){
+            joint_forms[i]->getJointState(js);
+            js.speed = 0;
+            joint_forms[i]->setJointState(js);
+        }
         joint_forms[i]->activate(!update);
     }
 }
