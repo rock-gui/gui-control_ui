@@ -4,7 +4,7 @@
 #include <base/JointLimits.hpp>
 #include <QtGui>
 #include <base/commands/Joints.hpp>
-#include <jointform.h>
+#include "jointform.h"
 #include <QTimer>
 
 inline double deg(double rad){return rad*57.2957795;}
@@ -32,13 +32,13 @@ public slots:
                    bool no_effort, bool no_velocity);
      void initFromYaml(QString filepath);
      void initFromURDF(QString filepath);
+     void initModel(const base::JointLimits &limits);
 
 protected slots:
     void handleUserInput(std::string, base::JointState);
     void triggerSend();
     void handleUpdateCheckbox(bool update);
     void handleKeepSendingCheckbox(bool doSend);
-    void initModel(const base::JointLimits &limits);
 signals:
     void newVal(base::commands::Joints val);
     void sendSignal();
