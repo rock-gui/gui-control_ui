@@ -24,7 +24,7 @@ public:
 
     Q_INVOKABLE void setJointState(base::samples::Joints const &sample);
     Q_INVOKABLE base::commands::Joints getJoints();
-
+    void setReference(const base::samples::Joints &sample);
 
 public slots:
 
@@ -56,6 +56,7 @@ protected:
     QCheckBox* send_vel;
     QCheckBox* send_eff;
     JointForm::Config config;
+    QCheckBox *cb_update;
 };
 
 #endif /* CONTROLBOT_H */

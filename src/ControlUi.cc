@@ -134,7 +134,7 @@ void ControlUi::initModel(const base::JointLimits &limits){
 
     //Check boxes
     QHBoxLayout *horizontal_layout = new QHBoxLayout;
-    QCheckBox *cb_update = new QCheckBox;
+    cb_update = new QCheckBox;
     cb_update->setText("Update joint state");
     cb_update->setCheckState(Qt::Checked);
     connect(cb_update, SIGNAL(toggled(bool)), this, SLOT(handleUpdateCheckbox(bool)));
@@ -278,5 +278,22 @@ void ControlUi::setJointState(const base::samples::Joints &sample)
             currentJointsState.elements[index] = sample.elements[i];
             joint_forms[index]->setJointState(sample.elements[i]);
         }
+    }
+}
+
+void ControlUi::setReference(const base::samples::Joints &sample){
+    cb_update->setChecked(false);
+    for(uint i=0; i<sample.size(); i++){
+        std::string name = sample.names[i];
+        std::vector<std::string>::iterator it =
+                std::find(currentJointsState.names.begin(), currentJointsState.names.end(), name);
+        if(it == currentJointsState.names.end()){
+            LOG_DEBUG("Received joint sample contains unknown joint name '%s'. Will ignore it's value.", name.c_str());
+            continue;
+        }
+
+        int index = currentJointsState.mapNameToIndex(name);
+        currentJointsState.elements[index] = sample.elements[i];
+        joint_forms[index]->setJointState(sample.elements[i]);
     }
 }
