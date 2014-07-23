@@ -12,6 +12,7 @@ only_positive=false
 override_vel_limits=0.0
 no_effort=false
 no_velocity=false
+command_noise_std_dev = 0
 @command_port_name = nil
 @state_port_name = nil
 @command_task_name = nil
@@ -41,6 +42,9 @@ rock-control_bot [options] /path/to/model/file
     end
     opt.on '--no_effort', "Don't generate UI elements for effort" do
         no_effort=true
+    end
+    opt.on '--add_noise=std_dev', "Add white noise with given std deviation to output signals" do |std_dev|
+        command_noise_std_dev=Float(std_dev)
     end
     opt.on '--no_velocity', "Don't generate UI elements for velocity" do
         no_velocity=true
@@ -92,7 +96,7 @@ Orocos.initialize
 Orocos.load_typekit('base')
 
 ctrl_gui = Vizkit.default_loader.ControlUi
-ctrl_gui.configureUi(override_vel_limits, only_positive, no_effort, no_velocity)
+ctrl_gui.configureUi(override_vel_limits, only_positive, no_effort, no_velocity, command_noise_std_dev)
 
 yaml_file_ext = [".yml", ".yaml"]
 urdf_file_ext = [".urdf", ".xml"]

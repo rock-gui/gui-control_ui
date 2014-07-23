@@ -46,11 +46,12 @@ void ControlUi::handleUserInput(std::string name, base::JointState state)
     emit(newVal(val_joint_command));
 }
 
-void ControlUi::configureUi(double override_vel_limit, bool positive_vel_only, bool no_effort, bool no_velocity){
+void ControlUi::configureUi(double override_vel_limit, bool positive_vel_only, bool no_effort, bool no_velocity, double command_noise_std_dev){
     config.override_vel_limit = override_vel_limit;
     config.positive_vel_only = positive_vel_only;
     config.no_effort = no_effort;
     config.no_velocity = no_velocity;
+    config.command_noise_std_dev = command_noise_std_dev;
 }
 
 void ControlUi::initFromURDF(QString filepath){
@@ -251,6 +252,9 @@ void ControlUi::triggerSend(){
     for(uint i=0; i<joint_forms.size(); i++){
         base::JointState state;
         joint_forms[i]->getJointState(state);
+        state.position += whiteNoise(config.command_noise_std_dev);
+        state.speed += whiteNoise(config.command_noise_std_dev);
+        state.effort += whiteNoise(config.command_noise_std_dev);
         if(!send_pos->isChecked())
             state.position = base::unset<double>();
         if(!send_vel->isChecked())
@@ -297,3 +301,15 @@ void ControlUi::setReference(const base::samples::Joints &sample){
         joint_forms[index]->setJointState(sample.elements[i]);
     }
 }
+
+
+double ControlUi::whiteNoise(const double std_dev)
+{
+    double rand_no = ( rand() / ( (double)RAND_MAX ) );
+    while( rand_no == 0 )
+        rand_no = ( rand() / ( (double)RAND_MAX ) );
+
+    double tmp = cos( ( 2.0 * (double)M_PI ) * rand() / ( (double)RAND_MAX ) );
+    return std_dev * sqrt( -2.0 * log( rand_no ) ) * tmp;
+}
+

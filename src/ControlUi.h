@@ -29,7 +29,7 @@ public:
 public slots:
 
     void configureUi(double override_vel_limit, bool positive_vel_only,
-                   bool no_effort, bool no_velocity);
+                   bool no_effort, bool no_velocity, double command_noise_std_dev = 0);
      void initFromYaml(QString filepath);
      void initFromURDF(QString filepath);
      void initModel(const base::JointLimits &limits);
@@ -44,6 +44,9 @@ signals:
     void sendSignal();
 
 protected:
+
+    double whiteNoise(const double std_dev);
+
     base::commands::Joints currentJointCommand;
     base::samples::Joints currentJointsState;
     bool generateJointStateUi;

@@ -27,6 +27,7 @@ public:
         bool positive_vel_only;
         bool no_effort;
         bool no_velocity;
+        double command_noise_std_dev;
     };
 
     explicit JointForm(QWidget *parent = 0, Config=Config());
