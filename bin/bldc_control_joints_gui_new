@@ -47,44 +47,42 @@ ctrl_gui = Vizkit.default_loader.ControlUi
 ctrl_gui.configureUi( override_vel_limits, only_positive, no_effort, no_velocity )
 configured = false
 
+def getReg( regs_comm, regs, dev_name, reg_name, def_val )
+    val = def_val
+    regs_comm.each do | devs |
+        if devs.deviceclass == dev_name
+            devs.registers.each do | reg |
+                val = reg.value if reg.name == reg_name
+            end
+        end
+    end
+    regs.each do | devs |
+        if devs.deviceclass == dev_name
+            devs.registers.each do | reg |
+                val = reg.value if reg.name == reg_name
+            end
+        end
+    end
+    return val
+end
+
 ctrl_gui.connect_to_task driver_task_name do |task|
     task.on_reachable do
         driver_task = Orocos::Async.name_service.get driver_task_name
         unless configured
-            regs = driver_task.property("joint_config_general").read.commonConfigureRegisters
-            pos_max = +3.14
-            pos_min = -3.14
-            vel_max = 3.14
-            cur_max = 1.0
-            regs.each do | cc |
-                pos_max = cc.value if cc.name == "POS_MAX"
-                pos_min = cc.value if cc.name == "POS_MIN"
-                vel_max = cc.value if cc.name == "VEL_MAX"
-                cur_max = cc.value if cc.name == "CUR_MAX"
-            end
-
+            regs_comm = driver_task.property("joint_config_general").read.configureRegisters
             joints_config = driver_task.property("joints_config").read
             jointLimits = Types::Base::JointLimits.new
             joints_config.each do |joint_config|
                 regs =  joint_config.configureRegisters
-                pos_max_j = pos_max
-                pos_min_j = pos_min
-                vel_max_j = vel_max
-                cur_max_j = cur_max
-                regs.each do | cc |
-                    pos_max_j = cc.value if cc.name == "POS_MAX"
-                    pos_min_j = cc.value if cc.name == "POS_MIN"
-                    vel_max_j = cc.value if cc.name == "VEL_MAX"
-                    cur_max_j = cc.value if cc.name == "CUR_MAX"
-                end
                 jointLimits.names.push( joint_config.jointName )
                 jointLimitRange = Types::Base::JointLimitRange.new
-                jointLimitRange.min.position = pos_min
-                jointLimitRange.max.position = pos_max
-                jointLimitRange.min.speed = -vel_max
-                jointLimitRange.max.speed =  vel_max
-                jointLimitRange.min.effort = -cur_max
-                jointLimitRange.max.effort =  cur_max
+                jointLimitRange.min.position =  getReg( regs_comm, regs, "CascadedController", "POS_MIN", -3.1 )
+                jointLimitRange.max.position =  getReg( regs_comm, regs, "CascadedController", "POS_MAX", +3.1 )
+                jointLimitRange.min.speed    = -getReg( regs_comm, regs, "CascadedController", "VEL_MAX", +2.0 )
+                jointLimitRange.max.speed    =  getReg( regs_comm, regs, "CascadedController", "VEL_MAX", +2.0 )
+                jointLimitRange.min.effort   = -getReg( regs_comm, regs, "CascadedController", "CUR_MAX", +1.0 )
+                jointLimitRange.max.effort   =  getReg( regs_comm, regs, "CascadedController", "CUR_MAX", +1.0 )
                 jointLimits.elements.push( jointLimitRange )
             end
             ctrl_gui.initModel( jointLimits )
