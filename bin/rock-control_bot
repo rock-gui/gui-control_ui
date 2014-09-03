@@ -2,7 +2,6 @@
 
 require 'vizkit'
 require 'optparse'
-require 'pry'
 
 use_test_gui = true
 hostname = nil
