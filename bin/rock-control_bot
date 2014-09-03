@@ -88,6 +88,7 @@ if(!model_file)
     raise("No nodel file given")
 end
 
+
 if hostname
     Orocos::CORBA.name_service.ip = hostname
 end
