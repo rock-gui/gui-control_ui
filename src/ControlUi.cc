@@ -89,9 +89,18 @@ void ControlUi::initFromYaml(QString filepath){
     YAML::Parser parser(file);
     YAML::Node doc;
     parser.GetNextDocument(doc);
+
+    try{
+        doc["limits"];
+    }
+    catch(std::exception e){
+        std::stringstream ss;
+        ss<<"Yaml parsing error: File "<<filepath.toStdString()<<" either doesn't exist or is not a valid joint limits file"<<std::endl;
+        throw std::invalid_argument(ss.str());
+    }
+
     const YAML::Node &names_node = doc["limits"]["names"];
     const YAML::Node &elements_node = doc["limits"]["elements"];
-
 
     if(elements_node.size() != names_node.size()){
         LOG_ERROR("Invalid limits yaml file. Size of names is different than size of elements");
@@ -126,6 +135,26 @@ void ControlUi::initFromYaml(QString filepath){
     initModel(limits);
 }
 
+void ControlUi::checkKeepSendingCB(bool checked){
+    cb_keep_sending->setChecked(checked);
+}
+
+void ControlUi::checkUpdateCB(bool checked){
+    cb_update->setChecked(checked);
+}
+
+void ControlUi::enableUpdateCB(bool enable){
+    cb_update->setEnabled(enable);
+}
+
+void ControlUi::enableSendCBs(bool enable){
+    cb_keep_sending->setEnabled(enable);
+    send_button->setEnabled(enable);
+    send_pos->setEnabled(enable);
+    send_vel->setEnabled(enable);
+    send_eff->setEnabled(enable);
+}
+
 void ControlUi::initModel(const base::JointLimits &limits){
 
     //
@@ -140,7 +169,7 @@ void ControlUi::initModel(const base::JointLimits &limits){
     cb_update->setCheckState(Qt::Checked);
     connect(cb_update, SIGNAL(toggled(bool)), this, SLOT(handleUpdateCheckbox(bool)));
 
-    QCheckBox *cb_keep_sending = new QCheckBox;
+    cb_keep_sending = new QCheckBox;
     cb_keep_sending->setText("Keep sending command");
     cb_keep_sending->setCheckState(Qt::Unchecked);
     connect(cb_keep_sending, SIGNAL(toggled(bool)), this, SLOT(handleKeepSendingCheckbox(bool)));
@@ -205,7 +234,7 @@ void ControlUi::initModel(const base::JointLimits &limits){
     vertical_layout->addItem(send_what_layout);
 
     //Send button
-    QPushButton* send_button = new QPushButton;
+    send_button = new QPushButton;
     send_button->setText("Send Joint Command");
     vertical_layout->addWidget(send_button);
 

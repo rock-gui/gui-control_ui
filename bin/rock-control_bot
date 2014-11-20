@@ -49,7 +49,6 @@ rock-control_bot [options] /path/to/model/file
         no_velocity=true
     end
     opt.on '--joint_command_port=TASK_CONTEXT_NAME:PORT_NAME', '-c=TASK_CONTEXT_NAME:PORT_NAME' , "Force joint command port to be PORT_NAME of task TASK_CONTEXT_NAME" do |val|
-        puts "Will take port '#{val}' for writing commands to"
         splitted = val.split(':')
         if splitted.size != 2
             raise("Definition of command port must follow the pattern 'TASK_CONTEXT_NAME:PORT_NAME'. Example: --joint_command_port=my_task:the_port")
@@ -58,7 +57,6 @@ rock-control_bot [options] /path/to/model/file
         @command_port_name = splitted[1]
     end
     opt.on '--joint_state_port=TASK_CONTEXT_NAME:PORT_NAME', '-s=TASK_CONTEXT_NAME:PORT_NAME' , "Force joint state port to be PORT_NAME of task TASK_CONTEXT_NAME" do |val|
-        puts "Will take port '#{val}' for reading state from"
         splitted = val.split(':')
         if splitted.size != 2
             raise("Definition of command port must follow the pattern 'TASK_CONTEXT_NAME:PORT_NAME'. Example: --joint_command_port=my_task:the_port")
@@ -110,31 +108,44 @@ else
 end
 
 if do_write
-    command_task = Orocos::Async.name_service.get @command_task_name
-    #Create writer
+    command_task = Orocos::Async.proxy @command_task_name
+    
     command_port = command_task.port(@command_port_name)
-    if not command_port
-       raise("Port #{@command_port_name} could not be found on task #{@command_task_name}")
-    end
-    writer = command_port.writer
 
-    #Connect to gui
-    ctrl_gui.connect(SIGNAL('sendSignal()')) do 
-        sample = ctrl_gui.getJoints()
-        ret = writer.write(sample)
+    command_port.on_reachable do
+
+       print "Connected output to ", @command_task_name, ":", @command_port_name, "\n"
+       ctrl_gui.enableSendCBs(true)
+
+       ctrl_gui.connect(SIGNAL('sendSignal()')) do
+          command_port.write(ctrl_gui.getJoints()) do end
+       end
+    end
+
+    command_task.on_unreachable do
+        print "Not connected to task ", @command_task_name, "\n"
+        ctrl_gui.checkKeepSendingCB(false)
+        ctrl_gui.checkUpdateCB(true)
+        ctrl_gui.enableSendCBs(false)
     end
 end
 
 if do_read
-    state_task = Orocos::Async.name_service.get @state_task_name
+    state_task = Orocos::Async.proxy @state_task_name    
+
     state_port = state_task.port(@state_port_name)
-    if not state_port
-       puts "Port #{@state_port_name} could not be found on task #{@state_task_name}"
-       exit 1
+    state_port.on_reachable do
+       print "Connected input to ", @state_task_name, ":", @state_port_name, "\n"
+       ctrl_gui.enableUpdateCB(true)
+
+       state_port.on_data do |data|
+           ctrl_gui.setJointState(data)
+       end
     end
 
-    state_port.on_data do |data| 
-         ctrl_gui.setJointState(data)
+    state_task.on_unreachable do
+        print "Not connected to task ", @state_task_name, "\n"
+        ctrl_gui.enableUpdateCB(false)
     end
 end
 
