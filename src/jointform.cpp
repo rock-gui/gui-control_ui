@@ -142,9 +142,12 @@ void JointForm::initFromJointLimits(const urdf::JointLimits& limits, std::string
 
 void JointForm::setJointState(const base::JointState& state)
 {
-    this->ui->dsbPos->setValue(state.position);
-    this->ui->dsbVel->setValue(state.speed);
-    this->ui->dsbEff->setValue(state.effort);
+    if(state.hasPosition())
+        this->ui->dsbPos->setValue(state.position);
+    if(state.hasSpeed())
+        this->ui->dsbVel->setValue(state.speed);
+    if(state.hasEffort())
+        this->ui->dsbEff->setValue(state.effort);
 }
 
 void JointForm::activate(bool active)
