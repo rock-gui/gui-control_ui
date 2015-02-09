@@ -50,14 +50,14 @@ configured = false
 def getReg( regs_comm, regs, dev_name, reg_name, def_val )
     val = def_val
     regs_comm.each do | devs |
-        if devs.deviceclass == dev_name
+        if devs.deviceClassName == dev_name
             devs.registers.each do | reg |
                 val = reg.value if reg.name == reg_name
             end
         end
     end
     regs.each do | devs |
-        if devs.deviceclass == dev_name
+        if devs.deviceClassName == dev_name
             devs.registers.each do | reg |
                 val = reg.value if reg.name == reg_name
             end
