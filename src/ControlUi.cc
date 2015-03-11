@@ -55,7 +55,6 @@ void ControlUi::configureUi(double override_vel_limit, bool positive_vel_only, b
 }
 
 void ControlUi::initFromURDF(QString filepath){
-
     std::ifstream file(filepath.toStdString().c_str());
     std::string xml((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     boost::shared_ptr<urdf::ModelInterface> urdf_model = urdf::parseURDF(xml);
@@ -68,8 +67,13 @@ void ControlUi::initFromURDF(QString filepath){
 
         if(joint->type != urdf::Joint::FIXED){
             if(joint->limits){
-                range.max.position = joint->limits->upper;
-                range.min.position = joint->limits->lower;
+                if (joint->type == urdf::Joint::CONTINUOUS) {
+                    range.max.position = 3.14;
+                    range.min.position = -3.14;
+                } else {
+                    range.max.position = joint->limits->upper;
+                    range.min.position = joint->limits->lower;
+                }
                 range.max.speed = joint->limits->velocity;
                 range.min.speed = -joint->limits->velocity;
                 range.max.effort = joint->limits->effort;
