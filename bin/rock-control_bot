@@ -118,7 +118,12 @@ if do_write
        ctrl_gui.enableSendCBs(true)
 
        ctrl_gui.connect(SIGNAL('sendSignal()')) do
-          command_port.write(ctrl_gui.getJoints()) do end
+          command_port.write(ctrl_gui.getJoints().dup) do |result, error|
+              if error
+                  puts "An errror orrcured during sending: #{error}"
+                  puts "Result: #{result}"
+              end
+          end
        end
     end
 
