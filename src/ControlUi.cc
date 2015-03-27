@@ -321,6 +321,7 @@ void ControlUi::triggerSend(){
         currentJointCommand.elements[i] = state;
     }
     emit(ControlUi::sendSignal());
+    emit(newVal(currentJointCommand));
 }
 
 void ControlUi::setJointState(const base::samples::Joints &sample)

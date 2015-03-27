@@ -45,7 +45,7 @@ protected slots:
     void handleUpdateCheckbox(bool update);
     void handleKeepSendingCheckbox(bool doSend);
 signals:
-    void newVal(base::commands::Joints val);
+    void newVal(base::samples::Joints val);
     void sendSignal();
 
 protected:
