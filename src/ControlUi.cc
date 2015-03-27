@@ -9,7 +9,7 @@
 ControlUi::ControlUi(QWidget *parent)
     : QWidget(parent)
 {
-    resize(850,430);
+    resize(850,275);
     show();
     sendTimer = new QTimer(this);
     joints_layout=0;
@@ -221,7 +221,7 @@ void ControlUi::initModel(const base::JointLimits &limits){
         //Create user interface elements
         JointForm *j_form = new JointForm(this, config);
         j_form->setMinimumWidth(190);
-        j_form->setMinimumHeight(100);
+        j_form->setMinimumHeight(20);
         j_form->setProperty("name", QString(name.c_str()));
         j_form->initFromJointRange(limits[i], name);
         connect(j_form, SIGNAL(valueChanged(std::string, base::JointState)), this, SLOT(handleUserInput(std::string, base::JointState)));
