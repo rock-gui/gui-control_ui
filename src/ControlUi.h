@@ -32,7 +32,7 @@ public slots:
      void checkUpdateCB(bool checked);
      void enableUpdateCB(bool enable);
      void enableSendCBs(bool enable);
-     bool isUpdateCBChecked();
+     void layoutJointForms(int columns);
      void configureUi(double override_vel_limit, bool positive_vel_only,
                    bool no_effort, bool no_velocity, double command_noise_std_dev = 0);
      void initFromYaml(QString filepath);
@@ -66,6 +66,10 @@ protected:
     JointForm::Config config;
     QCheckBox *cb_update;
     QCheckBox *cb_keep_sending;
+    QSpinBox *sb_columns;
+    QGridLayout* joints_layout;
+    QWidget* joints_widget;
+    QScrollArea* joints_scroll;
 };
 
 #endif /* CONTROLBOT_H */

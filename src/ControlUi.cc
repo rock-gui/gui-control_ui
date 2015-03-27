@@ -9,9 +9,10 @@
 ControlUi::ControlUi(QWidget *parent)
     : QWidget(parent)
 {
-    resize(300,120);
+    resize(850,430);
     show();
     sendTimer = new QTimer(this);
+    joints_layout=0;
 }
 
 ControlUi::~ControlUi()
@@ -159,6 +160,26 @@ void ControlUi::enableSendCBs(bool enable){
     send_eff->setEnabled(enable);
 }
 
+void ControlUi::layoutJointForms(int columns){
+    //Clear old layout
+    //If there is at elast one column, there was created a layout before.
+    if(joints_layout){
+        delete joints_layout;
+    }
+    joints_layout = new QGridLayout(joints_widget);
+
+    //Crete new layout
+    assert(columns>0);
+    for (uint i = 0; i < joint_forms.size(); i++){
+        int row=i/columns;
+        int column=i%columns;
+        joints_layout->addWidget(joint_forms[i], row, column);
+    }
+
+    joints_widget->setLayout(joints_layout);
+    joints_scroll->setWidget(joints_widget);
+}
+
 void ControlUi::initModel(const base::JointLimits &limits){
 
     //
@@ -178,32 +199,32 @@ void ControlUi::initModel(const base::JointLimits &limits){
     cb_keep_sending->setCheckState(Qt::Unchecked);
     connect(cb_keep_sending, SIGNAL(toggled(bool)), this, SLOT(handleKeepSendingCheckbox(bool)));
 
+    QLabel *l_columns = new QLabel();
+    l_columns->setText("Columns:");
+    l_columns->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    sb_columns = new QSpinBox;
+    sb_columns->setMinimum(1);
+    sb_columns->setMaximum(99);
+    sb_columns->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
     horizontal_layout->addWidget(cb_update);
     horizontal_layout->addWidget(cb_keep_sending);
+    horizontal_layout->addWidget(l_columns);
+    horizontal_layout->addWidget(sb_columns);
     vertical_layout->addItem(horizontal_layout);
 
-    QScrollArea* scrollarea = new QScrollArea();
-    QWidget* joints = new QWidget();
-    QGridLayout* layout = new QGridLayout(joints);
-
-    //    QGridLayout *layout = new QGridLayout;
-    const int columns=5;
+    joints_scroll = new QScrollArea();
+    joints_widget = new QWidget();
     for (uint i = 0; i < limits.size(); i++){
         std::string name = limits.names[i];
 
         //Create user interface elements
         JointForm *j_form = new JointForm(this, config);
+        j_form->setMinimumWidth(190);
+        j_form->setMinimumHeight(100);
         j_form->setProperty("name", QString(name.c_str()));
         j_form->initFromJointRange(limits[i], name);
-
         connect(j_form, SIGNAL(valueChanged(std::string, base::JointState)), this, SLOT(handleUserInput(std::string, base::JointState)));
-
-        int row=i/columns;
-        int column=i%columns;
-        layout->addWidget(j_form, row, column);
-
-        LOG_DEBUG("Created GUI elements for %s", name.c_str());
-
         //Fill current joint configuration
         currentJointCommand.names.push_back(name);
         currentJointCommand.elements.push_back(base::JointState());
@@ -213,10 +234,13 @@ void ControlUi::initModel(const base::JointLimits &limits){
         joint_forms.push_back(j_form);
     }
 
-    joints->setLayout(layout);
-    joints->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Minimum);
-    scrollarea->setWidget(joints);
-    vertical_layout->addWidget(scrollarea);
+    joints_widget->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Minimum);
+    joints_scroll->setWidgetResizable(true);
+    vertical_layout->addWidget(joints_scroll);
+    connect(sb_columns, SIGNAL(valueChanged(int)), this, SLOT(layoutJointForms(int)));
+    sb_columns->setValue(4);
+    layoutJointForms(4);
+
 
     //Send what?
     QHBoxLayout* send_what_layout = new QHBoxLayout;
