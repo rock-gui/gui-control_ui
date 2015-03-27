@@ -21,7 +21,7 @@ public:
     struct Config{
         inline Config():
             override_vel_limit(0), positive_vel_only(false),
-            no_effort(false), no_velocity(false){}
+            no_effort(false), no_velocity(false), command_noise_std_dev(0.0){}
 
         double override_vel_limit;
         bool positive_vel_only;
