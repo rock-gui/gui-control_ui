@@ -118,22 +118,25 @@ if do_write
        ctrl_gui.enableSendCBs(true)
 
        ctrl_gui.connect(SIGNAL('sendSignal()')) do
-          sample = ctrl_gui.getJoints().dup
-          command_port.write(sample) do |result, error|
-              if error or not result
-                  puts "An errror orrcured during sending: #{error}"
-                  puts "Result: #{result}"
-              end
+          if command_port.reachable?
+             command_port.write(ctrl_gui.getJoints()) do |result, error|
+                if error or not result
+                    puts "An Error occurred during sending: #{error}"
+                    puts "Result value: #{result}"
+                end
+             end
           end
           sleep 0.01
        end
     end
 
-    command_task.on_unreachable do
-        print "Not connected to task ", @command_task_name, "\n"
+    command_port.on_unreachable do
+        print "Not connected to port ", @command_task_name, ":", @command_port_name, "\n"
         ctrl_gui.checkKeepSendingCB(false)
         ctrl_gui.checkUpdateCB(true)
         ctrl_gui.enableSendCBs(false)
+
+        ctrl_gui.disconnect(SIGNAL('sendSignal()')) do end
     end
 end
 
@@ -144,14 +147,14 @@ if do_read
     state_port.on_reachable do
        print "Connected input to ", @state_task_name, ":", @state_port_name, "\n"
        ctrl_gui.enableUpdateCB(true)
-
-       state_port.on_data do |data|
-           ctrl_gui.setJointState(data)
-       end
     end
 
-    state_task.on_unreachable do
-        print "Not connected to task ", @state_task_name, "\n"
+    state_port.on_data do |data|
+        ctrl_gui.setJointState(data)
+    end
+
+    state_port.on_unreachable do
+        print "Not connected to port ", @state_task_name, ":", @state_port_name, "\n"
         ctrl_gui.enableUpdateCB(false)
     end
 end
