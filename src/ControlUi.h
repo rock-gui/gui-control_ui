@@ -37,6 +37,7 @@ public slots:
                    bool no_effort, bool no_velocity, double command_noise_std_dev = 0);
      void initFromYaml(QString filepath);
      void initFromURDF(QString filepath);
+     void initFromSDF(QString filePath);
      void initModel(const base::JointLimits &limits);
 
 protected slots:
