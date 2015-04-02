@@ -130,8 +130,8 @@ if do_write
        end
     end
 
-    command_task.on_unreachable do
-        print "Not connected to task ", @command_task_name, "\n"
+    command_port.on_unreachable do
+        print "Not connected to port ", @command_task_name, ":", @command_port_name, "\n"
         ctrl_gui.checkKeepSendingCB(false)
         ctrl_gui.checkUpdateCB(true)
         ctrl_gui.enableSendCBs(false)
@@ -153,8 +153,8 @@ if do_read
         ctrl_gui.setJointState(data)
     end
 
-    state_task.on_unreachable do
-        print "Not connected to task ", @state_task_name, "\n"
+    state_port.on_unreachable do
+        print "Not connected to port ", @state_task_name, ":", @state_port_name, "\n"
         ctrl_gui.enableUpdateCB(false)
     end
 end
