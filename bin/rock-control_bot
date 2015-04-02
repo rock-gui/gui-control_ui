@@ -118,7 +118,14 @@ if do_write
        ctrl_gui.enableSendCBs(true)
 
        ctrl_gui.connect(SIGNAL('sendSignal()')) do
-          command_port.write(ctrl_gui.getJoints()) do end
+          if command_port.reachable?
+             command_port.write(ctrl_gui.getJoints()) do |result, error|
+                if error or not result
+                    puts "An Error occurred during sending: #{error}"
+                    puts "Result value: #{result}"
+                end
+             end
+          end
           sleep 0.01
        end
     end
