@@ -128,6 +128,8 @@ if do_write
         ctrl_gui.checkKeepSendingCB(false)
         ctrl_gui.checkUpdateCB(true)
         ctrl_gui.enableSendCBs(false)
+
+        ctrl_gui.disconnect(SIGNAL('sendSignal()')) do end
     end
 end
 
