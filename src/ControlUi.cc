@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 #include <QScrollArea>
 #include <yaml-cpp/yaml.h>
+#include <sdf/sdf.hh>
 
 ControlUi::ControlUi(QWidget *parent)
     : QWidget(parent)
@@ -135,6 +136,75 @@ void ControlUi::initFromYaml(QString filepath){
         }
 
         limits.elements.push_back(range);
+    }
+
+    initModel(limits);
+}
+
+void ControlUi::initFromSDF(QString filePath)
+{
+     sdf::SDFPtr sdf(new sdf::SDF);
+
+    if (!sdf::init(sdf)){
+        LOG_ERROR("unable to initialize sdf.");
+        return;
+    }
+
+    if (!sdf::readFile(filePath.toStdString(), sdf)){
+        LOG_ERROR("unabled to read sdf file %s.", filePath.toStdString().c_str());
+        return;
+    }
+
+    if (!sdf->root->HasElement("model")){
+        LOG_ERROR("the <model> tag not exists");
+        return;
+    }
+
+    sdf::ElementPtr sdf_model = sdf->root->GetElement("model");
+    base::JointLimits limits;
+
+    if (sdf_model->HasElement("joint")){
+        sdf::ElementPtr jointElem = sdf_model->GetElement("joint");
+
+        while (jointElem){
+            std::string joint_name = jointElem->Get<std::string>("name");
+            std::string joint_type = jointElem->Get<std::string>("type");
+
+            base::JointLimitRange range;
+
+            if (jointElem->HasElement("axis")){
+                sdf::ElementPtr axisElem = jointElem->GetElement("axis");
+
+                if (axisElem->HasElement("limit")){
+                    sdf::ElementPtr limitElem = axisElem->GetElement("limit");
+
+                    if (limitElem->HasElement("lower")){
+                        range.min.position = limitElem->Get<double>("lower");
+                    }
+
+                    if (limitElem->HasElement("upper")){
+                        range.max.position = limitElem->Get<double>("upper");
+                    }
+
+                    if (limitElem->HasElement("effort")){
+                        double effort  = limitElem->Get<double>("effort");
+                        range.min.effort = -effort;
+                        range.max.effort = effort;
+                    }
+
+                    if (limitElem->HasElement("velocity")){
+                        double speed  = limitElem->Get<double>("velocity");
+                        range.min.speed = -speed;
+                        range.max.speed = speed;
+                    }
+                }
+
+            }
+
+            limits.names.push_back(joint_name);
+            limits.elements.push_back(range);
+            jointElem = jointElem->GetNextElement("joint");
+        }
     }
 
     initModel(limits);
