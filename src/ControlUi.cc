@@ -57,6 +57,24 @@ void ControlUi::configureUi(double override_vel_limit, bool positive_vel_only, b
     config.command_noise_std_dev = command_noise_std_dev;
 }
 
+void ControlUi::initFromFile(QString filepath, QString mode){
+    if (mode == "auto"){
+        QString ext = QFileInfo(filepath).suffix();
+        if (ext == "urdf")
+            return initFromURDF(filepath);
+        else if (ext == "sdf" || ext == "world")
+            return initFromSDF(filepath);
+        else if (ext == "yml")
+            return initFromYaml(filepath);
+    }
+    else if (mode == "urdf")
+        return initFromURDF(filepath);
+    else if (mode == "sdf")
+        return initFromSDF(filepath);
+    else if (mode == "yaml")
+        return initFromYaml(filepath);
+}
+
 void ControlUi::initFromURDF(QString filepath){
     std::ifstream file(filepath.toStdString().c_str());
     std::string xml((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
