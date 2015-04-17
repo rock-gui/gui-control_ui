@@ -174,13 +174,14 @@ void ControlUi::initFromSDF(QString filePath)
     }
 
     sdf::ElementPtr sdf_model = sdf->root->GetElement("model");
+    std::string model_name = sdf_model->Get<std::string>("name");
     base::JointLimits limits;
 
     if (sdf_model->HasElement("joint")){
         sdf::ElementPtr jointElem = sdf_model->GetElement("joint");
 
         while (jointElem){
-            std::string joint_name = jointElem->Get<std::string>("name");
+            std::string joint_name = model_name + "::" + jointElem->Get<std::string>("name");
             std::string joint_type = jointElem->Get<std::string>("type");
 
             base::JointLimitRange range;
