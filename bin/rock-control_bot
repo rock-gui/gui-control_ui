@@ -76,7 +76,8 @@ if(!@command_port_name and do_write)
     raise("No command port given")
 end
 if(!@state_task_name and do_read)
-    raise("No state task given")
+    puts "WARNING: No state task given"
+    do_read = false
 end
 if(!@state_port_name and do_read)
     raise("No state port given")
@@ -133,7 +134,6 @@ if do_write
     command_port.on_unreachable do
         print "Not connected to port ", @command_task_name, ":", @command_port_name, "\n"
         ctrl_gui.checkKeepSendingCB(false)
-        ctrl_gui.checkUpdateCB(true)
         ctrl_gui.enableSendCBs(false)
 
         ctrl_gui.disconnect(SIGNAL('sendSignal()')) do end
@@ -157,6 +157,13 @@ if do_read
         print "Not connected to port ", @state_task_name, ":", @state_port_name, "\n"
         ctrl_gui.enableUpdateCB(false)
     end
+
+    command_port.on_unreachable do
+        ctrl_gui.checkUpdateCB(true)
+    end
+else
+    ctrl_gui.checkUpdateCB(false)
+    ctrl_gui.enableUpdateCB(false)
 end
 
 Vizkit.exec    
