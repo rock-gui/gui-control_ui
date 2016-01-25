@@ -2,7 +2,7 @@ FIND_PACKAGE(Qt4 REQUIRED QtCore QtGui QtOpenGL)
 INCLUDE(${QT_USE_FILE})
 ADD_DEFINITIONS(${QT_DEFINITIONS})
 
-pkg_check_modules(control_ui_deps base-types base-lib QtCore QtGui urdfdom yaml-cpp)
+pkg_check_modules(control_ui_deps base-types base-lib QtCore QtGui urdfdom yaml-cpp03)
 find_library(control_ui_link_flags ${control_ui_deps_LIBRARIES} ${control_ui_deps_LIBRARY_DIRS})
 
 include_directories(${control_ui_deps_INCLUDE_DIRS})

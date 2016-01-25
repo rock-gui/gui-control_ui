@@ -4,7 +4,7 @@
 #include <fstream>
 #include <QVBoxLayout>
 #include <QScrollArea>
-#include <yaml-cpp/yaml.h>
+#include <yaml-cpp03/yaml.h>
 
 ControlUi::ControlUi(QWidget *parent)
     : QWidget(parent)
