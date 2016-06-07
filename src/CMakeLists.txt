@@ -28,7 +28,7 @@ rock_vizkit_widget(control_ui
     HEADERS ${HDRS}
     MOC ${MOC_HDRS}
     UI jointform.ui
-    DEPS_PKGCONFIG base-types base-lib QtCore QtGui urdfdom yaml-cpp03
+    DEPS_PKGCONFIG base-types base-lib QtCore QtGui urdfdom yaml-cpp
     DEPS_CMAKE
     LIBS ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTDESIGNER_LIBRARY}
 )

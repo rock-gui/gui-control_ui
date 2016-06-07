@@ -4,7 +4,7 @@
 #include <fstream>
 #include <QVBoxLayout>
 #include <QScrollArea>
-#include <yaml-cpp03/yaml.h>
+#include <yaml-cpp/yaml.h>
 
 ControlUi::ControlUi(QWidget *parent)
     : QWidget(parent)
@@ -89,11 +89,7 @@ void ControlUi::initFromURDF(QString filepath){
 }
 
 void ControlUi::initFromYaml(QString filepath){
-
-    std::ifstream file(filepath.toStdString().c_str());
-    YAML::Parser parser(file);
-    YAML::Node doc;
-    parser.GetNextDocument(doc);
+    YAML::Node doc = YAML::LoadFile(filepath.toStdString());
 
     try{
         doc["limits"];
@@ -114,22 +110,20 @@ void ControlUi::initFromYaml(QString filepath){
 
     base::JointLimits limits;
     for(uint i = 0; i < names_node.size(); i++){
-        std::string name;
-        names_node[i] >> name;
-        limits.names.push_back(name);
+        limits.names.push_back(names_node[i].as<std::string>());
 
         base::JointLimitRange range;
-        elements_node[i]["max"]["position"] >> range.max.position;
-        elements_node[i]["min"]["position"] >> range.min.position;
-        elements_node[i]["max"]["speed"] >> range.max.speed;
+        range.max.position = elements_node[i]["max"]["position"].as<double>();
+        range.min.position = elements_node[i]["min"]["position"].as<double>();
+        range.max.speed = elements_node[i]["max"]["speed"].as<float>();
         try{
-            elements_node[i]["min"]["speed"] >> range.min.speed;
+            range.min.speed = elements_node[i]["min"]["speed"].as<float>();
         }catch(...){
             range.min.speed = -range.max.speed;
         }
-        elements_node[i]["max"]["effort"] >> range.max.effort;
+        range.max.effort = elements_node[i]["max"]["effort"].as<float>();
         try{
-            elements_node[i]["min"]["effort"] >> range.min.effort;
+            range.min.effort = elements_node[i]["min"]["effort"].as<float>();
         }catch(...){
             range.min.effort = -range.max.effort;
         }
