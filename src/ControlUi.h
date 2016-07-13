@@ -24,7 +24,7 @@ public:
 
     Q_INVOKABLE void setJointState(base::samples::Joints const &sample);
     Q_INVOKABLE base::commands::Joints getJoints();
-    void setReference(const base::samples::Joints &sample);
+    Q_INVOKABLE void setReference(const base::samples::Joints &sample);
 
 public slots:
 
