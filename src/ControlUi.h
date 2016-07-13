@@ -52,8 +52,7 @@ protected:
 
     double whiteNoise(const double std_dev);
 
-    base::commands::Joints currentJointCommand;
-    base::samples::Joints currentJointsState;
+    base::samples::Joints current_joint_states;
     bool generateJointStateUi;
     std::vector<JointForm*> joint_forms;
     QTimer* sendTimer;
