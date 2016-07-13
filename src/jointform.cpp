@@ -53,26 +53,32 @@ JointForm::~JointForm()
 
 void JointForm::handlePosSliderChange(int val){
     this->ui->dsbPos->setValue((double)val/SLIDER_POS_SCALE_FACTOR);
+    handleValueChange();
 }
 
 void JointForm::handleVelSliderChange(int val){
     this->ui->dsbVel->setValue((double)val/SLIDER_VEL_SCALE_FACTOR);
+    handleValueChange();
 }
 
 void JointForm::handleEffSliderChange(int val){
     this->ui->dsbEff->setValue((double)val/SLIDER_EFF_SCALE_FACTOR);
+    handleValueChange();
 }
 
 void JointForm::handlePosBoxChange(double val){
     this->ui->slPos->setValue(val*SLIDER_POS_SCALE_FACTOR);
+    handleValueChange();
 }
 
 void JointForm::handleVelBoxChange(double val){
     this->ui->slVel->setValue(val*SLIDER_VEL_SCALE_FACTOR);
+    handleValueChange();
 }
 
 void JointForm::handleEffBoxChange(double val){
     this->ui->slEff->setValue(val*SLIDER_EFF_SCALE_FACTOR);
+    handleValueChange();
 }
 
 void JointForm::handleValueChange()

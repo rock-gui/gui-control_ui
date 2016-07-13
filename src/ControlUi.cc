@@ -220,9 +220,6 @@ void ControlUi::initModel(const base::JointLimits &limits){
         j_form->initFromJointRange(limits[i], name);
         connect(j_form, SIGNAL(valueChanged(std::string, base::JointState)), this, SLOT(handleUserInput(std::string, base::JointState)));
         //Fill current joint configuration
-        //currentJointCommand.names.push_back(name);
-        //currentJointCommand.elements.push_back(base::JointState());
-
         current_joint_states.names.push_back(name);
         current_joint_states.elements.push_back(base::JointState());
         joint_forms.push_back(j_form);
