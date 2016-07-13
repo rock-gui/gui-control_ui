@@ -24,7 +24,7 @@ public:
 
     Q_INVOKABLE void setJointState(base::samples::Joints const &sample);
     Q_INVOKABLE base::commands::Joints getJoints();
-    void setReference(const base::samples::Joints &sample);
+    Q_INVOKABLE void setReference(const base::samples::Joints &sample);
 
 public slots:
 
@@ -52,8 +52,7 @@ protected:
 
     double whiteNoise(const double std_dev);
 
-    base::commands::Joints currentJointCommand;
-    base::samples::Joints currentJointsState;
+    base::samples::Joints current_joint_states;
     bool generateJointStateUi;
     std::vector<JointForm*> joint_forms;
     QTimer* sendTimer;
