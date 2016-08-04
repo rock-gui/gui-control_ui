@@ -1,6 +1,7 @@
 #include <urdf_parser/urdf_parser.h>
+#include <urdf_world/types.h>
 #include "ControlUi.h"
-#include <base/Logging.hpp>
+#include <base-logging/Logging.hpp>
 #include <fstream>
 #include <QVBoxLayout>
 #include <QScrollArea>
@@ -58,12 +59,12 @@ void ControlUi::configureUi(double override_vel_limit, bool positive_vel_only, b
 void ControlUi::initFromURDF(QString filepath){
     std::ifstream file(filepath.toStdString().c_str());
     std::string xml((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    boost::shared_ptr<urdf::ModelInterface> urdf_model = urdf::parseURDF(xml);
+    urdf::ModelInterfaceSharedPtr urdf_model = urdf::parseURDF(xml);
 
-    std::map<std::string, boost::shared_ptr<urdf::Joint> >::iterator it;
+    std::map<std::string, std::shared_ptr<urdf::Joint> >::iterator it;
     base::JointLimits limits;
     for (it=urdf_model->joints_.begin(); it!=urdf_model->joints_.end(); ++it){
-        boost::shared_ptr<urdf::Joint> joint = it->second;
+        std::shared_ptr<urdf::Joint> joint = it->second;
         base::JointLimitRange range;
 
         if(joint->type != urdf::Joint::FIXED && !joint->mimic){
