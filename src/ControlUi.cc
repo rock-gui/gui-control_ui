@@ -61,7 +61,7 @@ void ControlUi::initFromURDF(QString filepath){
     std::string xml((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     urdf::ModelInterfaceSharedPtr urdf_model = urdf::parseURDF(xml);
 
-    std::map<std::string, std::shared_ptr<urdf::Joint> >::iterator it;
+    std::map<std::string, urdf::JointSharedPtr >::iterator it;
     base::JointLimits limits;
     for (it=urdf_model->joints_.begin(); it!=urdf_model->joints_.end(); ++it){
         std::shared_ptr<urdf::Joint> joint = it->second;
