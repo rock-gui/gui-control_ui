@@ -156,7 +156,7 @@ void ControlUi::initFromYaml(QString filepath){
 
 void ControlUi::initFromSDF(QString filePath)
 {
-     sdf::SDFPtr sdf(new sdf::SDF);
+    sdf::SDFPtr sdf(new sdf::SDF);
 
     if (!sdf::init(sdf)){
         LOG_ERROR("unable to initialize sdf.");
@@ -168,57 +168,54 @@ void ControlUi::initFromSDF(QString filePath)
         return;
     }
 
-    if (!sdf->root->HasElement("model")){
+    if (!sdf->Root()->HasElement("model")){
         LOG_ERROR("the <model> tag not exists");
         return;
     }
 
-    sdf::ElementPtr sdf_model = sdf->root->GetElement("model");
+    sdf::ElementPtr sdf_model = sdf->Root()->GetElement("model");
     std::string model_name = sdf_model->Get<std::string>("name");
     base::JointLimits limits;
 
-    if (sdf_model->HasElement("joint")){
-        sdf::ElementPtr jointElem = sdf_model->GetElement("joint");
+    sdf::ElementPtr jointElem = sdf_model->GetElement("joint");
+    while (jointElem){
+        std::string joint_name = model_name + "::" + jointElem->Get<std::string>("name");
+        std::string joint_type = jointElem->Get<std::string>("type");
 
-        while (jointElem){
-            std::string joint_name = model_name + "::" + jointElem->Get<std::string>("name");
-            std::string joint_type = jointElem->Get<std::string>("type");
+        base::JointLimitRange range;
 
-            base::JointLimitRange range;
+        if (jointElem->HasElement("axis")){
+            sdf::ElementPtr axisElem = jointElem->GetElement("axis");
 
-            if (jointElem->HasElement("axis")){
-                sdf::ElementPtr axisElem = jointElem->GetElement("axis");
+            if (axisElem->HasElement("limit")){
+                sdf::ElementPtr limitElem = axisElem->GetElement("limit");
 
-                if (axisElem->HasElement("limit")){
-                    sdf::ElementPtr limitElem = axisElem->GetElement("limit");
-
-                    if (limitElem->HasElement("lower")){
-                        range.min.position = limitElem->Get<double>("lower");
-                    }
-
-                    if (limitElem->HasElement("upper")){
-                        range.max.position = limitElem->Get<double>("upper");
-                    }
-
-                    if (limitElem->HasElement("effort")){
-                        double effort  = limitElem->Get<double>("effort");
-                        range.min.effort = -effort;
-                        range.max.effort = effort;
-                    }
-
-                    if (limitElem->HasElement("velocity")){
-                        double speed  = limitElem->Get<double>("velocity");
-                        range.min.speed = -speed;
-                        range.max.speed = speed;
-                    }
+                if (limitElem->HasElement("lower")){
+                    range.min.position = limitElem->Get<double>("lower");
                 }
 
+                if (limitElem->HasElement("upper")){
+                    range.max.position = limitElem->Get<double>("upper");
+                }
+
+                if (limitElem->HasElement("effort")){
+                    double effort  = limitElem->Get<double>("effort");
+                    range.min.effort = -effort;
+                    range.max.effort = effort;
+                }
+
+                if (limitElem->HasElement("velocity")){
+                    double speed  = limitElem->Get<double>("velocity");
+                    range.min.speed = -speed;
+                    range.max.speed = speed;
+                }
             }
 
-            limits.names.push_back(joint_name);
-            limits.elements.push_back(range);
-            jointElem = jointElem->GetNextElement("joint");
         }
+
+        limits.names.push_back(joint_name);
+        limits.elements.push_back(range);
+        jointElem = jointElem->GetNextElement("joint");
     }
 
     initModel(limits);
