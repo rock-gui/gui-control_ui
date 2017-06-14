@@ -71,7 +71,7 @@ void ControlUi::initFromFile(QString filepath, QString mode){
         return initFromURDF(filepath);
     else if (mode == "sdf")
         return initFromSDF(filepath);
-    else if (mode == "yaml")
+    else if (mode == "yml")
         return initFromYaml(filepath);
 }
 
