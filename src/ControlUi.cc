@@ -163,20 +163,14 @@ void ControlUi::initFromSDF(QString filePath)
 {
     sdf::SDFPtr sdf(new sdf::SDF);
 
-    if (!sdf::init(sdf)){
-        LOG_ERROR("unable to initialize sdf.");
-        return;
-    }
+    if (!sdf::init(sdf))
+        throw std::logic_error("unable to initialize the SDF structure");
 
-    if (!sdf::readFile(filePath.toStdString(), sdf)){
-        LOG_ERROR("unabled to read sdf file %s.", filePath.toStdString().c_str());
-        return;
-    }
+    if (!sdf::readFile(filePath.toStdString(), sdf))
+        throw std::logic_error("unable to read " + filePath.toStdString() + " as a SDF file");
 
-    if (!sdf->Root()->HasElement("model")){
-        LOG_ERROR("the <model> tag not exists");
-        return;
-    }
+    if (!sdf->Root()->HasElement("model"))
+        throw std::logic_error("SDF file " + filePath.toStdString() + " is not a model file (does not have a toplevel model tag)");
 
     sdf::ElementPtr sdf_model = sdf->Root()->GetElement("model");
     std::string model_name = sdf_model->Get<std::string>("name");

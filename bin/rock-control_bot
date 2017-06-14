@@ -108,10 +108,7 @@ if YAML_FILE_EXT.include?(model_file_ext)
 elsif URDF_FILE_EXT.include?(model_file_ext)
     ctrl_gui.initFromURDF(model_file.dup)
 elsif SDF_FILE_EXT.include?(model_file_ext)
-    if !ctrl_gui.initFromSDF(model_file.dup)
-        puts "Failed to load #{model_file}"
-        exit 1
-    end
+    ctrl_gui.initFromSDF(model_file.dup)
 else
     puts "Invalid model file format. Got #{model_file_ext} but accepts only ", YAML_FILE_EXT, ", ", URDF_FILE_EXT, " or ", SDF_FILE_EXT
     exit 1
