@@ -77,8 +77,13 @@ void ControlUi::initFromFile(QString filepath, QString mode){
 
 void ControlUi::initFromURDF(QString filepath){
     std::ifstream file(filepath.toStdString().c_str());
+    if (!file)
+        throw std::invalid_argument(filepath.toStdString() + " is not a valid file");
+
     std::string xml((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     urdf::ModelInterfaceSharedPtr urdf_model = urdf::parseURDF(xml);
+    if (!urdf_model)
+        throw std::invalid_argument("cannot load data in " + filepath.toStdString() + " as URDF");
 
     std::map<std::string, urdf::JointSharedPtr >::iterator it;
     base::JointLimits limits;
