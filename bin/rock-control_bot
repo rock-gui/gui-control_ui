@@ -99,6 +99,7 @@ ctrl_gui.configureUi(override_vel_limits, only_positive, no_effort, no_velocity,
 
 YAML_FILE_EXT = [".yml", ".yaml"]
 URDF_FILE_EXT = [".urdf", ".xml"]
+SDF_FILE_EXT = [".sdf", ".world"]
 
 model_file_ext = File.extname(model_file)
 
@@ -106,6 +107,11 @@ if YAML_FILE_EXT.include?(model_file_ext)
     ctrl_gui.initFromYaml(model_file.dup)
 elsif URDF_FILE_EXT.include?(model_file_ext)
     ctrl_gui.initFromURDF(model_file.dup)
+elsif SDF_FILE_EXT.include?(model_file_ext)
+    if !ctrl_gui.initFromSDF(model_file.dup)
+        puts "Failed to load #{model_file}"
+        exit 1
+    end
 else
     puts "Invalid model file format. Got #{model_file_ext} but accepts only ", YAML_FILE_EXT, ", ", URDF_FILE_EXT, " or ", SDF_FILE_EXT
     exit 1
