@@ -97,15 +97,18 @@ require 'pry'
 ctrl_gui = Vizkit.default_loader.ControlUi
 ctrl_gui.configureUi(override_vel_limits, only_positive, no_effort, no_velocity, command_noise_std_dev)
 
-yaml_file_ext = [".yml", ".yaml"]
-urdf_file_ext = [".urdf", ".xml"]
+YAML_FILE_EXT = [".yml", ".yaml"]
+URDF_FILE_EXT = [".urdf", ".xml"]
 
-if yaml_file_ext.include? File.extname(model_file)
+model_file_ext = File.extname(model_file)
+
+if YAML_FILE_EXT.include?(model_file_ext)
     ctrl_gui.initFromYaml(model_file.dup)
-elsif urdf_file_ext.include? File.extname(model_file)
+elsif URDF_FILE_EXT.include?(model_file_ext)
     ctrl_gui.initFromURDF(model_file.dup)
 else
-    print "Invalid model file format. Accepts only ", yaml_file_ext, " or ", urdf_file_ext
+    puts "Invalid model file format. Got #{model_file_ext} but accepts only ", YAML_FILE_EXT, ", ", URDF_FILE_EXT, " or ", SDF_FILE_EXT
+    exit 1
 end
 
 if do_write
