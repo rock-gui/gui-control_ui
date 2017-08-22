@@ -40,6 +40,11 @@ public slots:
      void initFromYaml(QString filepath);
      void initFromURDF(QString filepath);
      void initFromSDF(QString filePath);
+
+     void initFromString(QString string, QString mode);
+     void initFromSDFString(QString string);
+     void initFromURDFString(QString string);
+
      void initModel(const base::JointLimits &limits);
 
 protected slots:

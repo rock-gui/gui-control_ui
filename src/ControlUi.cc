@@ -60,30 +60,52 @@ void ControlUi::configureUi(double override_vel_limit, bool positive_vel_only, b
 void ControlUi::initFromFile(QString filepath, QString mode){
     if (mode == "auto"){
         QString ext = QFileInfo(filepath).suffix();
-        if (ext == "urdf")
-            return initFromURDF(filepath);
-        else if (ext == "sdf" || ext == "world")
-            return initFromSDF(filepath);
-        else if (ext == "yml")
+        if (ext == "yml")
             return initFromYaml(filepath);
+        else if (ext == "urdf")
+            mode = "urdf";
+        else if (ext == "sdf" || ext == "world")
+            mode = "sdf";
+        else
+            throw std::invalid_argument("cannot guess the mode for " + filepath.toStdString());
     }
-    else if (mode == "urdf")
-        return initFromURDF(filepath);
-    else if (mode == "sdf")
-        return initFromSDF(filepath);
-    else if (mode == "yml")
-        return initFromYaml(filepath);
-}
 
-void ControlUi::initFromURDF(QString filepath){
     std::ifstream file(filepath.toStdString().c_str());
     if (!file)
         throw std::invalid_argument(filepath.toStdString() + " is not a valid file");
 
-    std::string xml((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    urdf::ModelInterfaceSharedPtr urdf_model = urdf::parseURDF(xml);
+    std::string xml(
+            (std::istreambuf_iterator<char>(file)),
+            std::istreambuf_iterator<char>());
+    initFromString(QString::fromStdString(xml), mode);
+}
+
+void ControlUi::initFromString(QString xml, QString mode){
+    if (mode == "urdf")
+        return initFromURDFString(xml);
+    else if (mode == "sdf")
+        return initFromSDFString(xml);
+    else if (mode == "yml")
+        throw std::invalid_argument("cannot load yaml from string");
+    else if (mode == "auto")
+        throw std::invalid_argument("cannot automatically determine mode from string");
+    else
+        throw std::invalid_argument("unknown mode " + mode.toStdString());
+}
+
+void ControlUi::initFromURDF(QString filepath){
+    initFromFile(filepath, "urdf");
+}
+
+void ControlUi::initFromSDF(QString filepath) {
+    initFromFile(filepath, "sdf");
+}
+
+void ControlUi::initFromURDFString(QString xml)
+{
+    urdf::ModelInterfaceSharedPtr urdf_model = urdf::parseURDF(xml.toStdString());
     if (!urdf_model)
-        throw std::invalid_argument("cannot load data in " + filepath.toStdString() + " as URDF");
+        throw std::invalid_argument("cannot load given URDF string");
 
     std::map<std::string, urdf::JointSharedPtr >::iterator it;
     base::JointLimits limits;
@@ -159,18 +181,17 @@ void ControlUi::initFromYaml(QString filepath){
     initModel(limits);
 }
 
-void ControlUi::initFromSDF(QString filePath)
+void ControlUi::initFromSDFString(QString xml)
 {
     sdf::SDFPtr sdf(new sdf::SDF);
-
     if (!sdf::init(sdf))
         throw std::logic_error("unable to initialize the SDF structure");
 
-    if (!sdf::readFile(filePath.toStdString(), sdf))
-        throw std::logic_error("unable to read " + filePath.toStdString() + " as a SDF file");
+    if (!sdf::readString(xml.toStdString(), sdf))
+        throw std::invalid_argument("unable to parse the given string as SDF");
 
     if (!sdf->Root()->HasElement("model"))
-        throw std::logic_error("SDF file " + filePath.toStdString() + " is not a model file (does not have a toplevel model tag)");
+        throw std::invalid_argument("not a model (does not have a toplevel model tag)");
 
     sdf::ElementPtr sdf_model = sdf->Root()->GetElement("model");
     std::string model_name = sdf_model->Get<std::string>("name");
@@ -180,6 +201,11 @@ void ControlUi::initFromSDF(QString filePath)
     while (jointElem){
         std::string joint_name = model_name + "::" + jointElem->Get<std::string>("name");
         std::string joint_type = jointElem->Get<std::string>("type");
+        if (joint_type == "fixed")
+        {
+            jointElem = jointElem->GetNextElement("joint");
+            continue;
+        }
 
         base::JointLimitRange range;
 
