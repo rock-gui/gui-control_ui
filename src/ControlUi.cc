@@ -107,10 +107,10 @@ void ControlUi::initFromURDFString(QString xml)
     if (!urdf_model)
         throw std::invalid_argument("cannot load given URDF string");
 
-    std::map<std::string, urdf::JointSharedPtr >::iterator it;
+    std::map<std::string, urdf::JointSharedPtr >::const_iterator it;
     base::JointLimits limits;
     for (it=urdf_model->joints_.begin(); it!=urdf_model->joints_.end(); ++it){
-        std::shared_ptr<urdf::Joint> joint = it->second;
+        const urdf::JointSharedPtr &joint = it->second;
         base::JointLimitRange range;
 
         if(joint->type != urdf::Joint::FIXED && !joint->mimic){
