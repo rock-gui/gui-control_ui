@@ -9,6 +9,7 @@
   <depend package="base/types" />
   <depend package="base/logging" />
   <depend package="control/urdfdom" />
+  <depend package="control/sdformat" />
   <depend package="gui/vizkit" />
   <depend package="yaml-cpp" />
 </package>

@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 #include <QScrollArea>
 #include <yaml-cpp/yaml.h>
+#include <sdf/sdf.hh>
 
 ControlUi::ControlUi(QWidget *parent)
     : QWidget(parent)
@@ -56,10 +57,55 @@ void ControlUi::configureUi(double override_vel_limit, bool positive_vel_only, b
     config.command_noise_std_dev = command_noise_std_dev;
 }
 
-void ControlUi::initFromURDF(QString filepath){
+void ControlUi::initFromFile(QString filepath, QString mode){
+    if (mode == "auto"){
+        QString ext = QFileInfo(filepath).suffix();
+        if (ext == "yml")
+            return initFromYaml(filepath);
+        else if (ext == "urdf")
+            mode = "urdf";
+        else if (ext == "sdf" || ext == "world")
+            mode = "sdf";
+        else
+            throw std::invalid_argument("cannot guess the mode for " + filepath.toStdString());
+    }
+
     std::ifstream file(filepath.toStdString().c_str());
-    std::string xml((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    urdf::ModelInterfaceSharedPtr urdf_model = urdf::parseURDF(xml);
+    if (!file)
+        throw std::invalid_argument(filepath.toStdString() + " is not a valid file");
+
+    std::string xml(
+            (std::istreambuf_iterator<char>(file)),
+            std::istreambuf_iterator<char>());
+    initFromString(QString::fromStdString(xml), mode);
+}
+
+void ControlUi::initFromString(QString xml, QString mode){
+    if (mode == "urdf")
+        return initFromURDFString(xml);
+    else if (mode == "sdf")
+        return initFromSDFString(xml);
+    else if (mode == "yml")
+        throw std::invalid_argument("cannot load yaml from string");
+    else if (mode == "auto")
+        throw std::invalid_argument("cannot automatically determine mode from string");
+    else
+        throw std::invalid_argument("unknown mode " + mode.toStdString());
+}
+
+void ControlUi::initFromURDF(QString filepath){
+    initFromFile(filepath, "urdf");
+}
+
+void ControlUi::initFromSDF(QString filepath) {
+    initFromFile(filepath, "sdf");
+}
+
+void ControlUi::initFromURDFString(QString xml)
+{
+    urdf::ModelInterfaceSharedPtr urdf_model = urdf::parseURDF(xml.toStdString());
+    if (!urdf_model)
+        throw std::invalid_argument("cannot load given URDF string");
 
     std::map<std::string, urdf::JointSharedPtr >::const_iterator it;
     base::JointLimits limits;
@@ -130,6 +176,71 @@ void ControlUi::initFromYaml(QString filepath){
         }
 
         limits.elements.push_back(range);
+    }
+
+    initModel(limits);
+}
+
+void ControlUi::initFromSDFString(QString xml)
+{
+    sdf::SDFPtr sdf(new sdf::SDF);
+    if (!sdf::init(sdf))
+        throw std::logic_error("unable to initialize the SDF structure");
+
+    if (!sdf::readString(xml.toStdString(), sdf))
+        throw std::invalid_argument("unable to parse the given string as SDF");
+
+    if (!sdf->Root()->HasElement("model"))
+        throw std::invalid_argument("not a model (does not have a toplevel model tag)");
+
+    sdf::ElementPtr sdf_model = sdf->Root()->GetElement("model");
+    std::string model_name = sdf_model->Get<std::string>("name");
+    base::JointLimits limits;
+
+    sdf::ElementPtr jointElem = sdf_model->GetElement("joint");
+    while (jointElem){
+        std::string joint_name = model_name + "::" + jointElem->Get<std::string>("name");
+        std::string joint_type = jointElem->Get<std::string>("type");
+        if (joint_type == "fixed")
+        {
+            jointElem = jointElem->GetNextElement("joint");
+            continue;
+        }
+
+        base::JointLimitRange range;
+
+        if (jointElem->HasElement("axis")){
+            sdf::ElementPtr axisElem = jointElem->GetElement("axis");
+
+            if (axisElem->HasElement("limit")){
+                sdf::ElementPtr limitElem = axisElem->GetElement("limit");
+
+                if (limitElem->HasElement("lower")){
+                    range.min.position = limitElem->Get<double>("lower");
+                }
+
+                if (limitElem->HasElement("upper")){
+                    range.max.position = limitElem->Get<double>("upper");
+                }
+
+                if (limitElem->HasElement("effort")){
+                    double effort  = limitElem->Get<double>("effort");
+                    range.min.effort = -effort;
+                    range.max.effort = effort;
+                }
+
+                if (limitElem->HasElement("velocity")){
+                    double speed  = limitElem->Get<double>("velocity");
+                    range.min.speed = -speed;
+                    range.max.speed = speed;
+                }
+            }
+
+        }
+
+        limits.names.push_back(joint_name);
+        limits.elements.push_back(range);
+        jointElem = jointElem->GetNextElement("joint");
     }
 
     initModel(limits);

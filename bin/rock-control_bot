@@ -50,19 +50,19 @@ rock-control_bot [options] /path/to/model/file
     end
     opt.on '--joint_command_port=TASK_CONTEXT_NAME:PORT_NAME', '-c=TASK_CONTEXT_NAME:PORT_NAME' , "Force joint command port to be PORT_NAME of task TASK_CONTEXT_NAME" do |val|
         splitted = val.split(':')
-        if splitted.size != 2
+        if splitted.size < 2
             raise("Definition of command port must follow the pattern 'TASK_CONTEXT_NAME:PORT_NAME'. Example: --joint_command_port=my_task:the_port")
         end
-        @command_task_name = splitted[0]
-        @command_port_name = splitted[1]
+        @command_task_name = splitted[0..-2].join(":")
+        @command_port_name = splitted[-1]
     end
     opt.on '--joint_state_port=TASK_CONTEXT_NAME:PORT_NAME', '-s=TASK_CONTEXT_NAME:PORT_NAME' , "Force joint state port to be PORT_NAME of task TASK_CONTEXT_NAME" do |val|
         splitted = val.split(':')
-        if splitted.size != 2
+        if splitted.size < 2
             raise("Definition of command port must follow the pattern 'TASK_CONTEXT_NAME:PORT_NAME'. Example: --joint_command_port=my_task:the_port")
         end
-        @state_task_name = splitted[0]
-        @state_port_name = splitted[1]
+        @state_task_name = splitted[0..-2].join(":")
+        @state_port_name = splitted[-1]
     end
 end
 
@@ -97,25 +97,28 @@ require 'pry'
 ctrl_gui = Vizkit.default_loader.ControlUi
 ctrl_gui.configureUi(override_vel_limits, only_positive, no_effort, no_velocity, command_noise_std_dev)
 
-yaml_file_ext = [".yml", ".yaml"]
-urdf_file_ext = [".urdf", ".xml"]
+YAML_FILE_EXT = [".yml", ".yaml"]
+URDF_FILE_EXT = [".urdf", ".xml"]
+SDF_FILE_EXT = [".sdf", ".world"]
 
-if yaml_file_ext.include? File.extname(model_file)
+model_file_ext = File.extname(model_file)
+
+if YAML_FILE_EXT.include?(model_file_ext)
     ctrl_gui.initFromYaml(model_file.dup)
-elsif urdf_file_ext.include? File.extname(model_file)
+elsif URDF_FILE_EXT.include?(model_file_ext)
     ctrl_gui.initFromURDF(model_file.dup)
+elsif SDF_FILE_EXT.include?(model_file_ext)
+    ctrl_gui.initFromSDF(model_file.dup)
 else
-    print "Invalid model file format. Accepts only ", yaml_file_ext, " or ", urdf_file_ext
+    puts "Invalid model file format. Got #{model_file_ext} but accepts only ", YAML_FILE_EXT, ", ", URDF_FILE_EXT, " or ", SDF_FILE_EXT
+    exit 1
 end
 
 if do_write
     command_task = Orocos::Async.proxy @command_task_name
-    
     command_port = command_task.port(@command_port_name)
-
     command_port.on_reachable do
-
-       print "Connected output to ", @command_task_name, ":", @command_port_name, "\n"
+       print "Connected output to task ", @command_task_name, ", port ", @command_port_name, "\n"
        ctrl_gui.enableSendCBs(true)
 
        ctrl_gui.connect(SIGNAL('sendSignal()')) do
@@ -132,7 +135,7 @@ if do_write
     end
 
     command_port.on_unreachable do
-        print "Not connected to port ", @command_task_name, ":", @command_port_name, "\n"
+        print "Not connected to task ", @command_task_name, ", port ", @command_port_name, "\n"
         ctrl_gui.checkKeepSendingCB(false)
         ctrl_gui.enableSendCBs(false)
 
@@ -145,7 +148,7 @@ if do_read
 
     state_port = state_task.port(@state_port_name)
     state_port.on_reachable do
-       print "Connected input to ", @state_task_name, ":", @state_port_name, "\n"
+       print "Connected input to task ", @state_task_name, ", port ", @state_port_name, "\n"
        ctrl_gui.enableUpdateCB(true)
     end
 
@@ -154,7 +157,7 @@ if do_read
     end
 
     state_port.on_unreachable do
-        print "Not connected to port ", @state_task_name, ":", @state_port_name, "\n"
+        print "Not connected to task ", @state_task_name, ", port ", @state_port_name, "\n"
         ctrl_gui.enableUpdateCB(false)
     end
 
