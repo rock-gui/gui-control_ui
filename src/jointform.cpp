@@ -52,32 +52,44 @@ JointForm::~JointForm()
 }
 
 void JointForm::handlePosSliderChange(int val){
+    this->ui->dsbPos->blockSignals(true);
     this->ui->dsbPos->setValue((double)val/SLIDER_POS_SCALE_FACTOR);
+    this->ui->dsbPos->blockSignals(false);
     handleValueChange();
 }
 
 void JointForm::handleVelSliderChange(int val){
+    this->ui->dsbVel->blockSignals(true);
     this->ui->dsbVel->setValue((double)val/SLIDER_VEL_SCALE_FACTOR);
+    this->ui->dsbVel->blockSignals(false);
     handleValueChange();
 }
 
 void JointForm::handleEffSliderChange(int val){
+    this->ui->dsbEff->blockSignals(true);
     this->ui->dsbEff->setValue((double)val/SLIDER_EFF_SCALE_FACTOR);
+    this->ui->dsbEff->blockSignals(false);
     handleValueChange();
 }
 
 void JointForm::handlePosBoxChange(double val){
+    this->ui->slPos->blockSignals(true);
     this->ui->slPos->setValue(val*SLIDER_POS_SCALE_FACTOR);
+    this->ui->slPos->blockSignals(false);
     handleValueChange();
 }
 
 void JointForm::handleVelBoxChange(double val){
+    this->ui->slVel->blockSignals(true);
     this->ui->slVel->setValue(val*SLIDER_VEL_SCALE_FACTOR);
+    this->ui->slVel->blockSignals(false);
     handleValueChange();
 }
 
 void JointForm::handleEffBoxChange(double val){
+    this->ui->slEff->blockSignals(true);
     this->ui->slEff->setValue(val*SLIDER_EFF_SCALE_FACTOR);
+    this->ui->slEff->blockSignals(false);
     handleValueChange();
 }
 
@@ -148,12 +160,30 @@ void JointForm::initFromJointLimits(const urdf::JointLimits& limits, std::string
 
 void JointForm::setJointState(const base::JointState& state)
 {
-    if(state.hasPosition())
+    if(state.hasPosition()) {
+        this->ui->dsbPos->blockSignals(true);
         this->ui->dsbPos->setValue(state.position);
-    if(state.hasSpeed())
+        this->ui->dsbPos->blockSignals(false);
+        this->ui->slPos->blockSignals(true);
+        this->ui->slPos->setValue(state.position*SLIDER_POS_SCALE_FACTOR);
+        this->ui->slPos->blockSignals(false);
+    }
+    if(state.hasSpeed()) {
+        this->ui->dsbVel->blockSignals(true);
         this->ui->dsbVel->setValue(state.speed);
-    if(state.hasEffort())
+        this->ui->dsbVel->blockSignals(false);
+        this->ui->slVel->blockSignals(true);
+        this->ui->slVel->setValue(state.speed*SLIDER_VEL_SCALE_FACTOR);
+        this->ui->slVel->blockSignals(false);
+    }
+    if(state.hasEffort()) {
+        this->ui->dsbEff->blockSignals(true);
         this->ui->dsbEff->setValue(state.effort);
+        this->ui->dsbEff->blockSignals(false);
+        this->ui->slEff->blockSignals(true);
+        this->ui->slEff->setValue(state.effort*SLIDER_EFF_SCALE_FACTOR);
+        this->ui->slEff->blockSignals(false);
+    }
 }
 
 void JointForm::activate(bool active)
