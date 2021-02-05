@@ -1,6 +1,6 @@
 #include "jointform.h"
 #include "ui_jointform.h"
-#include <math.h>
+#include <cmath>
 
 JointForm::JointForm(QWidget *parent, Config config) :
     QWidget(parent), config(config),
@@ -154,7 +154,7 @@ int JointForm::calcSpinBoxDecimals(const double& min, const double& max) {
     double decimals = 0;
     double tmp = (max-min) / SPINBOX_STEPS;
     
-    while ( tmp < 1 ) {
+    while ( std::isnormal(tmp) && tmp < 1 ) {
         decimals++;
         tmp *= 10;
     }
