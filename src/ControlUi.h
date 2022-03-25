@@ -7,6 +7,16 @@
 #include "jointform.h"
 #include <QTimer>
 
+QT_BEGIN_NAMESPACE
+
+class QPushButton;
+class QCheckBox;
+class QSpinBox;
+class QGridLayout;
+class QScrollArea;
+
+QT_END_NAMESPACE
+
 inline double deg(double rad){return rad*57.2957795;}
 inline double rad(double deg){return deg*0.0174532925;}
 

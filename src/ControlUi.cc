@@ -5,6 +5,10 @@
 #include <fstream>
 #include <QVBoxLayout>
 #include <QScrollArea>
+#include <QCheckBox>
+#include <QSpinBox>
+#include <QPushButton>
+#include <QLabel>
 #include <yaml-cpp/yaml.h>
 #include <sdf/sdf.hh>
 

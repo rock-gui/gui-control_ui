@@ -10,6 +10,6 @@
   <depend package="base/logging" />
   <depend package="control/urdfdom" />
   <depend package="control/sdformat" />
-  <depend package="gui/vizkit" />
+  <depend package="gui/vizkit3d" />
   <depend package="yaml-cpp" />
 </package>

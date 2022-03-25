@@ -2,12 +2,12 @@
 #define CONTROLBOTPLUGIN_H
 
 #include <QtGui>
-#include <QtDesigner/QDesignerCustomWidgetInterface>
+#include <QtUiPlugin/QDesignerCustomWidgetInterface>
 
 class ControlUiPlugin : public QObject, public QDesignerCustomWidgetInterface
 {
     Q_OBJECT
-    Q_INTERFACES(QDesignerCustomWidgetInterface)
+    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QDesignerCustomWidgetInterface")
 
 public:
     ControlUiPlugin(QObject *parent = 0);

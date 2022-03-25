@@ -1,8 +1,6 @@
 #include "ControlUiPlugin.h"
 #include "ControlUi.h"
 
-Q_EXPORT_PLUGIN2(ControlUi, ControlUiPlugin)
-
 ControlUiPlugin::ControlUiPlugin(QObject *parent)
     : QObject(parent)
 {
