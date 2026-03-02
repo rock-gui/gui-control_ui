@@ -7,6 +7,7 @@
 #include <QScrollArea>
 #include <yaml-cpp/yaml.h>
 #include <sdf/sdf.hh>
+#include <cassert>
 
 ControlUi::ControlUi(QWidget *parent)
     : QWidget(parent)
