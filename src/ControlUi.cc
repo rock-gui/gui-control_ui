@@ -7,6 +7,7 @@
 #include <QScrollArea>
 #include <yaml-cpp/yaml.h>
 #include <sdf/sdf.hh>
+#include <cassert>
 
 ControlUi::ControlUi(QWidget *parent)
     : QWidget(parent)
@@ -32,7 +33,7 @@ void ControlUi::handleUserInput(std::string name, base::JointState state)
     try{
         idx = current_joint_states.mapNameToIndex(name);
     }
-    catch(base::commands::Joints::InvalidName ex){
+    catch(base::commands::Joints::InvalidName const& ex){
         LOG_ERROR("Invalid name was passed from QObject. This should never happen, probably there is something wrong in initModel. Expeption: %s", ex.what());
         return;
     }
@@ -141,7 +142,7 @@ void ControlUi::initFromYaml(QString filepath){
     try{
         doc["limits"];
     }
-    catch(std::exception e){
+    catch(std::exception const& e){
         std::stringstream ss;
         ss<<"Yaml parsing error: File "<<filepath.toStdString()<<" either doesn't exist or is not a valid joint limits file"<<std::endl;
         throw std::invalid_argument(ss.str());
